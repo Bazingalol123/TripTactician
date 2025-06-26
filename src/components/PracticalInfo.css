@@ -1,0 +1,359 @@
+.practical-info {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.practical-info h2 {
+  text-align: center;
+  color: #333;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.practical-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.info-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-left: 1rem;
+  border-left: 3px solid #667eea;
+}
+
+.card-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-right: 0.8rem;
+  color: #4ecdc4;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-content p {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.additional-tips {
+  background-color: #f0f8ff;
+  border-radius: 12px;
+  padding: 2rem;
+  color: #333;
+  margin-bottom: 2rem;
+  border: 1px solid #cceeff;
+}
+
+.additional-tips h3 {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.tips-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.tip-section {
+  background-color: #fefefe;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #f0f0f0;
+}
+
+.tip-section h4 {
+  margin: 0 0 0.8rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.tip-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tip-section li {
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed #eee;
+  color: #555;
+  font-size: 0.85rem;
+  position: relative;
+  padding-left: 1.2rem;
+}
+
+.tip-section li:last-child {
+  border-bottom: none;
+}
+
+.tip-section li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #4ecdc4;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.weather-note {
+  background-color: #fefefe;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 3px solid #667eea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.weather-note h4 {
+  margin: 0 0 0.8rem 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.weather-note p {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.budget-breakdown {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+}
+
+.budget-breakdown h4 {
+  margin: 0 0 1.2rem 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.budget-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.budget-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.budget-item:hover {
+  background-color: #f0f0f0;
+}
+
+.budget-category {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.budget-percentage {
+  font-weight: 600;
+  color: #667eea;
+  background-color: #e6f7ff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .practical-info {
+    padding: 1.2rem;
+  }
+  
+  .practical-info h2 {
+    font-size: 1.8rem;
+  }
+  
+  .practical-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .info-card {
+    padding: 1.2rem;
+  }
+  
+  .card-header h3 {
+    font-size: 1rem;
+  }
+  
+  .card-content p {
+    font-size: 0.85rem;
+  }
+  
+  .additional-tips {
+    padding: 1.5rem;
+  }
+  
+  .additional-tips h3 {
+    font-size: 1.3rem;
+  }
+  
+  .tips-container {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  
+  .tip-section {
+    padding: 0.8rem;
+  }
+  
+  .tip-section h4 {
+    font-size: 0.95rem;
+  }
+  
+  .tip-section li {
+    font-size: 0.8rem;
+  }
+  
+  .weather-note {
+    padding: 1.2rem;
+  }
+  
+  .weather-note h4 {
+    font-size: 1rem;
+  }
+  
+  .weather-note p {
+    font-size: 0.85rem;
+  }
+  
+  .budget-breakdown {
+    padding: 1.2rem;
+  }
+  
+  .budget-breakdown h4 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .practical-info {
+    padding: 1rem;
+  }
+  
+  .practical-info h2 {
+    font-size: 1.6rem;
+  }
+  
+  .practical-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .info-card {
+    padding: 1rem;
+  }
+  
+  .card-header h3 {
+    font-size: 0.9rem;
+  }
+  
+  .card-content p {
+    font-size: 0.8rem;
+  }
+  
+  .additional-tips {
+    padding: 1.2rem;
+  }
+  
+  .additional-tips h3 {
+    font-size: 1.1rem;
+  }
+  
+  .tips-container {
+    gap: 0.6rem;
+  }
+  
+  .tip-section {
+    padding: 0.7rem;
+  }
+  
+  .tip-section li {
+    font-size: 0.75rem;
+  }
+  
+  .weather-note {
+    padding: 1rem;
+  }
+  
+  .weather-note h4 {
+    font-size: 0.9rem;
+  }
+  
+  .weather-note p {
+    font-size: 0.8rem;
+  }
+  
+  .budget-breakdown {
+    padding: 1rem;
+  }
+  
+  .budget-breakdown h4 {
+    font-size: 0.9rem;
+  }
+  
+  .budget-category {
+    font-size: 0.8rem;
+  }
+  
+  .budget-percentage {
+    font-size: 0.75rem;
+  }
+} 
