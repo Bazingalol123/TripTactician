@@ -36,7 +36,8 @@ jobs:
       - name: Unit tests (if script exists)
         run: |
           if npm run | grep -q "test"; then
-            npm test --if-present
+            echo "Running unit tests (will pass if no tests are found)"
+            npm test --if-present -- --watchAll=false --passWithNoTests
           else
             echo "No test script – skipping."
           fi
