@@ -655,12 +655,13 @@ const ProductionMapView = ({
   const performanceMonitor = useRef(new PerformanceMonitor());
   const clusterer = useRef(new AdvancedClusterer({ radius: 80, maxZoom: 16 }));
 
-  // Filter activities with valid coordinates
-  const validActivities = activities.filter(activity => 
-    activity.latitude && activity.longitude &&
-    !isNaN(activity.latitude) && !isNaN(activity.longitude) &&
-    activity.latitude !== 0 && activity.longitude !== 0
-  );
+  // Filter activities with valid coordinates (memoized to avoid new reference on every render)
+  const validActivities = useMemo(() =>
+    activities.filter(activity =>
+      activity.latitude && activity.longitude &&
+      !isNaN(activity.latitude) && !isNaN(activity.longitude) &&
+      activity.latitude !== 0 && activity.longitude !== 0
+    ), [activities]);
 
   // Show message if no valid coordinates
   if (validActivities.length === 0) {
