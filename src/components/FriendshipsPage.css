@@ -1,0 +1,304 @@
+.friendships-page-container {
+  padding: var(--spacing-lg);
+  background-color: var(--color-background-light);
+  min-height: 100vh;
+  font-family: var(--font-family-primary);
+}
+
+.friendships-header {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.friendships-header h1 {
+  font-size: 2.2em;
+  color: var(--color-text-dark);
+  font-family: var(--font-family-secondary);
+}
+
+.add-friend-section {
+  background-color: var(--color-background-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-small);
+}
+
+.search-form {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex-grow: 1;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  color: var(--color-text-dark);
+  background-color: var(--color-background-white);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  min-width: 200px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-lighter);
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-size: 0.95em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  box-shadow: var(--shadow-small);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.search-results {
+  margin-top: var(--spacing-md);
+  border-top: 1px solid var(--color-divider);
+  padding-top: var(--spacing-md);
+}
+
+.search-results h4 {
+  font-size: 1.1em;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-sm);
+}
+
+.search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-background-light);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.search-result-item span {
+  font-size: 0.95em;
+  color: var(--color-text-dark);
+  font-weight: 500;
+}
+
+.friendships-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.section-card {
+  background-color: var(--color-background-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-small);
+}
+
+.section-card h2 {
+  font-size: 1.5em;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.section-card h2 svg {
+  color: var(--color-primary);
+}
+
+.friendship-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.friendship-list p {
+  color: var(--color-text-medium);
+  font-style: italic;
+  padding: var(--spacing-sm);
+}
+
+/* Friendship Card Styles */
+.friendship-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-small);
+  transition: transform 0.2s ease;
+  flex-wrap: wrap;
+}
+
+.friendship-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.friend-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-grow: 1;
+}
+
+.friend-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--border-radius-full);
+  object-fit: cover;
+  border: 2px solid var(--color-primary-light);
+}
+
+.friend-details h4 {
+  font-size: 1.1em;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.friend-details p {
+  font-size: 0.85em;
+  color: var(--color-text-medium);
+  margin: 0;
+}
+
+.friendship-status {
+  flex-shrink: 0;
+}
+
+.status-pending {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning-dark);
+  padding: 4px 8px;
+  border-radius: var(--border-radius-md);
+  font-size: 0.8em;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.status-friends {
+  background-color: var(--color-success-light);
+  color: var(--color-success-dark);
+  padding: 4px 8px;
+  border-radius: var(--border-radius-md);
+  font-size: 0.8em;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.request-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: color 0.2s ease;
+}
+
+.icon-button:hover {
+  color: var(--color-primary-dark);
+}
+
+.accept-button {
+  color: var(--color-success);
+}
+
+.accept-button:hover {
+  color: var(--color-success-dark);
+}
+
+.reject-button,
+.remove-button {
+  color: var(--color-error);
+}
+
+.reject-button:hover,
+.remove-button:hover {
+  color: var(--color-error-dark);
+}
+
+.icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--color-grey);
+}
+
+.friendships-page-loading,
+.friendships-page-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  font-size: 1.2em;
+  color: var(--color-text-medium);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .friendships-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .search-form {
+    flex-direction: column;
+  }
+
+  .search-results {
+    margin-top: 10px;
+  }
+
+  .friendship-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .request-actions {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .icon-button {
+    width: 100%;
+    justify-content: center;
+  }
+} 

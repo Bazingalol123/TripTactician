@@ -1,0 +1,238 @@
+const Trip = require('../models/Trip');
+
+/**
+ * Creates a structured activity object from a raw Google Places API result.
+ * @param {object} place - The raw Google Place object.
+ * @param {string} categoryHint - A hint for the category if not determinable from place types.
+ * @returns {object} A structured activity object matching the Trip schema.
+ */
+function createActivityFromGooglePlace(place, categoryHint = 'attraction') {
+  // Helper to get the primary category from Google's types array
+  const getCategory = (types) => {
+    const typeMap = {
+      restaurant: 'restaurant',
+      cafe: 'restaurant',
+      bakery: 'restaurant',
+      tourist_attraction: 'attraction',
+      museum: 'attraction',
+      art_gallery: 'attraction',
+      church: 'culture',
+      mosque: 'culture',
+      synagogue: 'culture',
+      place_of_worship: 'culture',
+      park: 'nature',
+      shopping_mall: 'shopping',
+      store: 'shopping',
+      night_club: 'entertainment',
+      bar: 'entertainment',
+    };
+    for (const type of types) {
+      if (typeMap[type]) return typeMap[type];
+    }
+    return categoryHint;
+  };
+
+  const activity = {
+    name: place.name || 'Unknown Place',
+    description: `A popular spot in the area, known for being a ${place.types?.[0]?.replace(/_/g, ' ') || 'local favorite'}.`,
+    location: place.vicinity || place.formatted_address || 'Address not available',
+    time: 'To be decided',
+    duration: '60 minutes',
+    cost: place.price_level ? String(place.price_level * 20) : '0', // Approximate cost
+    category: getCategory(place.types || []),
+    latitude: place.geometry?.location?.lat,
+    longitude: place.geometry?.location?.lng,
+    rating: place.rating || 0,
+    tips: `Check opening hours before visiting. Ratings are subject to change.`,
+    placeId: place.place_id,
+    photos: place.photos?.map(p => ({
+      photo_reference: p.photo_reference,
+      height: p.height,
+      width: p.width,
+      html_attributions: p.html_attributions,
+    })) || [],
+  };
+
+  if (!activity.latitude || !activity.longitude) {
+    console.warn(`Missing coordinates for place: ${activity.name}`);
+  }
+  
+  return activity;
+}
+
+exports.createTrip = async (req, res) => {
+  try {
+    const { destination, title, ...rest } = req.body;
+    const trip = await Trip.create({
+      title: title || destination,
+      destination,
+      userId: req.user.id,
+      ...rest
+    });
+    res.status(201).json(trip);
+  } catch (err) {
+    res.status(400).json({ error: 'Failed to create trip', details: err.message });
+  }
+};
+
+exports.getTrips = async (req, res) => {
+  try {
+    const trips = await Trip.find({ userId: req.user.id });
+    res.json(trips);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch trips' });
+  }
+};
+
+exports.getTripById = async (req, res) => {
+  try {
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    res.json(trip);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch trip' });
+  }
+};
+
+exports.updateTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id },
+      req.body,
+      { new: true }
+    );
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    res.json(trip);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update trip' });
+  }
+};
+
+exports.deleteTrip = async (req, res) => {
+  try {
+    const trip = await Trip.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    res.json({ message: 'Trip deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete trip' });
+  }
+};
+
+// Add activity from recommendation to trip
+exports.addRecommendationToTrip = async (req, res) => {
+  try {
+    const { dayIndex, recommendation, insertIndex = -1 } = req.body;
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
+    
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    if (!trip.dailyItineraries[dayIndex]) {
+      return res.status(400).json({ error: 'Invalid day index' });
+    }
+
+    // Convert recommendation to activity format using the new utility function
+    const newActivity = createActivityFromGooglePlace(recommendation);
+
+    // Insert at specified index or append
+    if (insertIndex >= 0 && insertIndex < trip.dailyItineraries[dayIndex].activities.length) {
+      trip.dailyItineraries[dayIndex].activities.splice(insertIndex, 0, newActivity);
+    } else {
+      trip.dailyItineraries[dayIndex].activities.push(newActivity);
+    }
+
+    const updatedTrip = await trip.save();
+    res.json({ 
+      success: true, 
+      trip: updatedTrip,
+      message: 'Activity added successfully' 
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add recommendation', details: err.message });
+  }
+};
+
+// Replace existing activity with recommendation
+exports.replaceActivityWithRecommendation = async (req, res) => {
+  try {
+    const { dayIndex, activityIndex, recommendation } = req.body;
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
+    
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    if (!trip.dailyItineraries[dayIndex] || !trip.dailyItineraries[dayIndex].activities[activityIndex]) {
+      return res.status(400).json({ error: 'Invalid day or activity index' });
+    }
+
+    // Convert recommendation to activity format, keeping original time
+    const replacementActivity = {
+      ...createActivityFromGooglePlace(recommendation),
+      time: trip.dailyItineraries[dayIndex].activities[activityIndex].time, // Keep original time
+    };
+
+    // Replace the activity
+    trip.dailyItineraries[dayIndex].activities[activityIndex] = replacementActivity;
+
+    const updatedTrip = await trip.save();
+    res.json({ 
+      success: true, 
+      trip: updatedTrip,
+      message: 'Activity replaced successfully' 
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to replace activity', details: err.message });
+  }
+};
+
+// Remove activity from trip
+exports.removeActivity = async (req, res) => {
+  try {
+    const { dayIndex, activityIndex } = req.body;
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
+    
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    if (!trip.dailyItineraries[dayIndex] || !trip.dailyItineraries[dayIndex].activities[activityIndex]) {
+      return res.status(400).json({ error: 'Invalid day or activity index' });
+    }
+
+    // Remove the activity
+    trip.dailyItineraries[dayIndex].activities.splice(activityIndex, 1);
+
+    const updatedTrip = await trip.save();
+    res.json({ 
+      success: true, 
+      trip: updatedTrip,
+      message: 'Activity removed successfully' 
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to remove activity', details: err.message });
+  }
+};
+
+// Reorder activities within a day
+exports.reorderActivities = async (req, res) => {
+  try {
+    const { dayIndex, fromIndex, toIndex } = req.body;
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
+    
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    if (!trip.dailyItineraries[dayIndex]) {
+      return res.status(400).json({ error: 'Invalid day index' });
+    }
+
+    const activities = trip.dailyItineraries[dayIndex].activities;
+    if (fromIndex < 0 || fromIndex >= activities.length || toIndex < 0 || toIndex >= activities.length) {
+      return res.status(400).json({ error: 'Invalid activity indices' });
+    }
+
+    // Move activity from fromIndex to toIndex
+    const [movedActivity] = activities.splice(fromIndex, 1);
+    activities.splice(toIndex, 0, movedActivity);
+
+    const updatedTrip = await trip.save();
+    res.json({ 
+      success: true, 
+      trip: updatedTrip,
+      message: 'Activities reordered successfully' 
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reorder activities', details: err.message });
+  }
+}; 

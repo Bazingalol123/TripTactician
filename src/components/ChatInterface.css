@@ -1,0 +1,407 @@
+.chat-interface {
+  @apply h-screen w-full bg-background overflow-hidden;
+}
+
+.chat-layout {
+  @apply flex h-full;
+}
+
+/* Chat Panel */
+.chat-panel {
+  @apply flex flex-col w-full transition-all duration-300;
+}
+
+.chat-panel.with-map {
+  @apply w-1/2;
+}
+
+.chat-header {
+  @apply flex items-center justify-between p-6 border-b border-border bg-card/50 backdrop-blur-sm;
+}
+
+.chat-title {
+  @apply flex items-center gap-3;
+}
+
+.title-icon {
+  @apply w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center;
+}
+
+.chat-actions {
+  @apply flex items-center gap-2;
+}
+
+/* Messages Container */
+.messages-container {
+  @apply flex-1 overflow-y-auto p-6 space-y-6;
+}
+
+.message {
+  @apply flex gap-3 animate-in slide-in-from-bottom-2 duration-300;
+}
+
+.message-user {
+  @apply flex-row-reverse;
+}
+
+.message-avatar {
+  @apply w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1;
+}
+
+.message-user .message-avatar {
+  @apply bg-blue-500 text-white;
+}
+
+.message-content {
+  @apply flex flex-col gap-1 max-w-[80%];
+}
+
+.message-user .message-content {
+  @apply items-end;
+}
+
+.message-bubble {
+  @apply rounded-2xl px-4 py-3 shadow-sm border;
+}
+
+.message-ai .message-bubble {
+  @apply bg-card border-border text-foreground;
+}
+
+.message-user .message-bubble {
+  @apply bg-primary text-white border-primary;
+}
+
+.message-text {
+  @apply text-sm leading-relaxed whitespace-pre-wrap;
+}
+
+.message-time {
+  @apply text-xs text-muted-foreground;
+}
+
+.message-actions {
+  @apply flex gap-2 mt-1;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  @apply flex items-center gap-1;
+}
+
+.typing-dot {
+  @apply w-2 h-2 bg-muted-foreground rounded-full animate-pulse;
+  animation-delay: calc(var(--i, 0) * 0.2s);
+}
+
+.typing-dot:nth-child(1) { --i: 0; }
+.typing-dot:nth-child(2) { --i: 1; }
+.typing-dot:nth-child(3) { --i: 2; }
+
+/* Suggestions */
+.suggestions-container {
+  @apply p-6 border-t border-border bg-card/30;
+}
+
+.suggestions-title {
+  @apply text-sm font-medium text-muted-foreground mb-3;
+}
+
+.suggestions-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-3;
+}
+
+.suggestion-card {
+  @apply p-3 text-left text-sm bg-card border border-border rounded-lg 
+         hover:border-primary/50 hover:bg-card/80 transition-all duration-200
+         focus:outline-none focus:ring-2 focus:ring-primary/20;
+}
+
+/* Input Container */
+.input-container {
+  @apply p-6 border-t border-border bg-card/50 backdrop-blur-sm;
+}
+
+.input-wrapper {
+  @apply relative flex items-end gap-3 p-1 bg-background border border-border rounded-2xl
+         focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20;
+}
+
+.chat-input {
+  @apply flex-1 bg-transparent border-0 px-4 py-3 text-sm placeholder:text-muted-foreground
+         focus:outline-none resize-none;
+}
+
+.input-actions {
+  @apply flex items-center gap-2 px-2;
+}
+
+.send-btn {
+  @apply bg-primary hover:bg-primary/90 text-white rounded-full p-2;
+}
+
+.send-btn:disabled {
+  @apply bg-muted text-muted-foreground cursor-not-allowed;
+}
+
+/* Map Panel */
+.map-panel {
+  @apply w-1/2 border-l border-border bg-card flex flex-col;
+}
+
+.map-header {
+  @apply flex items-center justify-between p-4 border-b border-border;
+}
+
+.map-container {
+  @apply flex-1;
+}
+
+/* Trip Card */
+.trip-card {
+  @apply mt-4 p-4 bg-accent/30 border border-border rounded-lg space-y-3;
+}
+
+.trip-header {
+  @apply space-y-2;
+}
+
+.trip-destination {
+  @apply flex items-center gap-2;
+}
+
+.trip-duration {
+  @apply flex items-center gap-2;
+}
+
+.trip-preview {
+  @apply space-y-2;
+}
+
+.activities-preview {
+  @apply space-y-2;
+}
+
+.day-preview {
+  @apply space-y-1;
+}
+
+.day-label {
+  @apply text-xs font-medium text-primary;
+}
+
+.activities-list {
+  @apply flex flex-wrap gap-1;
+}
+
+.activity-tag {
+  @apply text-xs bg-background border border-border rounded px-2 py-1;
+}
+
+.trip-actions {
+  @apply flex gap-2 pt-2 border-t border-border;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chat-panel.with-map {
+    @apply w-full;
+  }
+  
+  .map-panel {
+    @apply fixed inset-0 z-50 w-full;
+  }
+  
+  .suggestions-grid {
+    @apply grid-cols-1;
+  }
+  
+  .trip-actions {
+    @apply flex-col;
+  }
+  
+  .message-content {
+    @apply max-w-[85%];
+  }
+}
+
+/* Animations */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+/* Scrollbar Styling */
+.messages-container::-webkit-scrollbar {
+  @apply w-1;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  @apply bg-border/80;
+}
+
+/* Enhanced Trip Card Styles */
+.trip-main-info {
+  @apply space-y-3;
+}
+
+.trip-destination {
+  @apply flex items-start gap-3;
+}
+
+.trip-metadata {
+  @apply flex flex-wrap gap-4;
+}
+
+.trip-stat {
+  @apply flex items-center gap-2;
+}
+
+.trip-summary {
+  @apply py-3 border-y border-border;
+}
+
+.summary-stats {
+  @apply flex justify-around text-center;
+}
+
+.stat-item {
+  @apply flex flex-col;
+}
+
+.stat-value {
+  @apply text-lg font-bold text-primary;
+}
+
+.stat-label {
+  @apply text-xs text-muted-foreground;
+}
+
+.daily-itineraries {
+  @apply space-y-3;
+}
+
+.itinerary-header {
+  @apply flex items-center justify-between;
+}
+
+.days-container {
+  @apply space-y-2;
+}
+
+.day-card {
+  @apply border border-border rounded-lg overflow-hidden;
+}
+
+.day-header {
+  @apply flex items-center justify-between p-3 bg-accent/30 cursor-pointer 
+         hover:bg-accent/50 transition-colors;
+}
+
+.day-info {
+  @apply flex items-center gap-3;
+}
+
+.day-number {
+  @apply text-sm font-bold text-primary bg-primary/10 rounded-full w-8 h-8 
+         flex items-center justify-center;
+}
+
+.day-details {
+  @apply space-y-1;
+}
+
+.day-theme {
+  @apply text-sm font-medium text-foreground;
+}
+
+.day-date {
+  @apply text-xs text-muted-foreground;
+}
+
+.day-meta {
+  @apply flex items-center gap-3 text-xs text-muted-foreground;
+}
+
+.activities-count {
+  @apply font-medium;
+}
+
+.day-budget {
+  @apply font-semibold text-primary;
+}
+
+.day-activities {
+  @apply space-y-3 p-3 bg-background;
+}
+
+.activity-item {
+  @apply flex gap-3 p-3 bg-card border border-border rounded-lg;
+}
+
+.activity-time {
+  @apply flex-shrink-0 w-16 text-xs font-medium text-primary 
+         bg-primary/10 rounded px-2 py-1 h-fit;
+}
+
+.activity-content {
+  @apply flex-1 space-y-2;
+}
+
+.activity-header {
+  @apply flex items-start justify-between gap-3;
+}
+
+.activity-icon {
+  @apply text-lg flex-shrink-0;
+}
+
+.activity-info {
+  @apply flex-1 min-w-0;
+}
+
+.activity-name {
+  @apply text-sm font-semibold text-foreground;
+}
+
+.activity-location {
+  @apply text-xs text-muted-foreground truncate;
+}
+
+.activity-cost {
+  @apply text-xs font-semibold text-primary bg-primary/10 rounded px-2 py-1;
+}
+
+.activity-description {
+  @apply text-sm text-muted-foreground line-clamp-2;
+}
+
+.activity-tips {
+  @apply flex items-start gap-2 text-xs text-muted-foreground bg-accent/30 rounded p-2;
+}
+
+.show-more-hint {
+  @apply text-center py-2;
+}
+
+.action-btn {
+  @apply flex-1 flex items-center justify-center gap-2;
+}

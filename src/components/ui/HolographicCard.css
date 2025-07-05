@@ -1,0 +1,132 @@
+.holographic-card {
+  @apply relative overflow-hidden rounded-2xl backdrop-blur-xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.8) 0%,
+    rgba(30, 41, 59, 0.6) 50%,
+    rgba(15, 23, 42, 0.8) 100%
+  );
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(6, 182, 212, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.holographic-card-ghost {
+  @apply relative overflow-hidden rounded-2xl backdrop-blur-xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.3) 0%,
+    rgba(30, 41, 59, 0.2) 50%,
+    rgba(15, 23, 42, 0.3) 100%
+  );
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  box-shadow: 
+    0 4px 16px rgba(6, 182, 212, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.holographic-card-solid {
+  @apply relative overflow-hidden rounded-2xl backdrop-blur-xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(30, 41, 59, 0.9) 50%,
+    rgba(15, 23, 42, 0.95) 100%
+  );
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  box-shadow: 
+    0 12px 40px rgba(6, 182, 212, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.holographic-card-glow {
+  @apply relative overflow-hidden rounded-2xl backdrop-blur-xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.8) 0%,
+    rgba(30, 41, 59, 0.6) 50%,
+    rgba(15, 23, 42, 0.8) 100%
+  );
+  border: 1px solid rgba(6, 182, 212, 0.5);
+  box-shadow: 
+    0 0 30px rgba(6, 182, 212, 0.3),
+    0 8px 32px rgba(6, 182, 212, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.holographic-content {
+  @apply relative z-10;
+}
+
+.holographic-overlay {
+  @apply absolute inset-0 opacity-30;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(6, 182, 212, 0.1) 50%,
+    transparent 70%
+  );
+  animation: holographic-shimmer 8s ease-in-out infinite;
+}
+
+.holographic-border {
+  @apply absolute inset-0 rounded-2xl;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(6, 182, 212, 0.2),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.holographic-glow {
+  @apply absolute inset-0 rounded-2xl;
+  background: radial-gradient(
+    circle at center,
+    rgba(6, 182, 212, 0.2) 0%,
+    transparent 70%
+  );
+  filter: blur(20px);
+  transform: scale(1.1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.with-glow .holographic-glow {
+  opacity: 1;
+}
+
+.interactive:hover .holographic-border {
+  opacity: 1;
+}
+
+.interactive:hover .holographic-overlay {
+  animation-duration: 2s;
+}
+
+@keyframes holographic-shimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .holographic-card,
+  .holographic-card-ghost,
+  .holographic-card-solid,
+  .holographic-card-glow {
+    @apply rounded-xl;
+  }
+} 

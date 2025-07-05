@@ -1,0 +1,769 @@
+/* TripViewScreen.css - Layla.ai Inspired Design */
+
+.trip-view-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.trip-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.trip-content {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 80px);
+}
+
+.trip-sidebar {
+  width: 30%;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.trip-map-container {
+  width: 70%;
+  position: relative;
+  background: #f8fafc;
+}
+
+/* Enhanced Trip Summary Header */
+.trip-summary-header {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  color: white;
+  padding: 1.5rem;
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.trip-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* Enhanced Tab Navigation */
+.trip-tabs {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem 1rem;
+  background: #f9fafb;
+}
+
+.trip-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  margin-right: 0.25rem;
+}
+
+.trip-tab:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.trip-tab.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.trip-tab.active.info {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.trip-tab.active.recommendations {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Enhanced Day Navigation */
+.day-navigation {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+}
+
+.day-navigation h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.day-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.day-button {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  text-align: left;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: #f9fafb;
+}
+
+.day-button:hover {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.day-button.active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+}
+
+.day-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.day-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.day-theme {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-stats {
+  text-align: right;
+}
+
+.day-stops {
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.day-cost {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Enhanced Activity Cards */
+.activities-container {
+  padding: 1rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.activities-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.activities-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.activities-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.activity-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: white;
+}
+
+.activity-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.activity-card.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.activity-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.activity-title-section {
+  flex: 1;
+}
+
+.activity-title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.activity-category-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.activity-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #111827;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.activity-time {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.activity-time-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.25rem;
+}
+
+.activity-cost-section {
+  text-align: right;
+  margin-left: 0.75rem;
+}
+
+.activity-cost {
+  font-weight: 700;
+  color: #059669;
+  font-size: 0.875rem;
+}
+
+.activity-rating {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #d97706;
+  margin-top: 0.125rem;
+}
+
+.activity-rating-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: currentColor;
+  margin-right: 0.25rem;
+}
+
+.activity-description {
+  font-size: 0.75rem;
+  color: #6b7280;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.activity-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.activity-location {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.activity-location-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.activity-location-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-tips {
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+.activity-tips-content {
+  display: flex;
+  align-items: flex-start;
+}
+
+.activity-tips-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #ca8a04;
+  margin-right: 0.5rem;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}
+
+.activity-tips-text {
+  font-size: 0.75rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.activity-actions {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.activity-category-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.activity-category-badge.restaurant {
+  background: #fed7aa;
+  color: #c2410c;
+}
+
+.activity-category-badge.attraction {
+  background: #e9d5ff;
+  color: #7c2d12;
+}
+
+.activity-category-badge.park {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.activity-category-badge.shopping {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+.activity-category-badge.entertainment {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.activity-category-badge.default {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.activity-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-action-button {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.activity-action-button:hover {
+  background: #f3f4f6;
+}
+
+.activity-action-button.directions {
+  color: #2563eb;
+}
+
+.activity-action-button.directions:hover {
+  background: #eff6ff;
+}
+
+.activity-action-button.remove {
+  color: #dc2626;
+}
+
+.activity-action-button.remove:hover {
+  background: #fef2f2;
+}
+
+/* Info Tab Styles */
+.info-section {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.info-card {
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid;
+}
+
+.info-card-header {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.info-card-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+}
+
+.info-card.weather {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-grid-item-label {
+  color: #6b7280;
+}
+
+.info-grid-item-value {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.info-card-text {
+  font-size: 0.75rem;
+  color: #1e40af;
+}
+
+.insight-card {
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid;
+  margin-bottom: 0.75rem;
+}
+
+.insight-card.money {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.insight-card.transport {
+  background: #faf5ff;
+  border-color: #c4b5fd;
+}
+
+.insight-card.dining {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.insight-title {
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.insight-title.money {
+  color: #166534;
+}
+
+.insight-title.transport {
+  color: #6b21a8;
+}
+
+.insight-title.dining {
+  color: #c2410c;
+}
+
+.insight-text {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.insight-text.money {
+  color: #15803d;
+}
+
+.insight-text.transport {
+  color: #7c2d12;
+}
+
+.insight-text.dining {
+  color: #ea580c;
+}
+
+.emergency-card {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.emergency-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.emergency-item-label {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.emergency-item-value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.phrases-card {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.phrase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.phrase-english {
+  color: #6b7280;
+}
+
+.phrase-local {
+  font-weight: 500;
+  color: #111827;
+}
+
+/* Floating Stats Panel */
+.floating-stats {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  max-width: 18rem;
+  z-index: 10;
+}
+
+.floating-stats-title {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.floating-stats-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.floating-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.floating-stats-label {
+  color: #6b7280;
+}
+
+.floating-stats-value {
+  font-weight: 500;
+  color: #111827;
+}
+
+.floating-stats-ai-badge {
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 0.5rem;
+}
+
+.ai-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #059669;
+}
+
+.ai-badge-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.ai-badge-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .trip-content {
+    flex-direction: column;
+  }
+  
+  .trip-sidebar {
+    width: 100%;
+    height: 40vh;
+  }
+  
+  .trip-map-container {
+    width: 100%;
+    height: 60vh;
+  }
+  
+  .floating-stats {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin: 1rem;
+    max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .trip-summary-header {
+    padding: 1rem;
+  }
+  
+  .trip-stats-grid {
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .day-navigation {
+    padding: 0.75rem;
+  }
+  
+  .activities-container {
+    padding: 0.75rem;
+  }
+  
+  .activity-card {
+    padding: 0.75rem;
+  }
+  
+  .info-section {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.activity-card,
+.day-button,
+.info-card,
+.insight-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrollbar Styling */
+.activities-container::-webkit-scrollbar,
+.info-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activities-container::-webkit-scrollbar-track,
+.info-section::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.activities-container::-webkit-scrollbar-thumb,
+.info-section::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.activities-container::-webkit-scrollbar-thumb:hover,
+.info-section::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+} 

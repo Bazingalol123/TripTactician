@@ -1,13 +1,48 @@
 .google-map-container {
   width: 100%;
-  height: 400px; /* Adjust height as needed */
-  margin-top: 20px;
-  border-radius: 8px;
+  flex: 1; /* Take full height of parent */
+  border-radius: var(--border-radius-lg);
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
 }
 
 .google-map {
   width: 100%;
-  height: 100%;
+  flex: 1; /* Take up available vertical space */
+  min-height: 300px; /* Ensure a minimum height even if flex fails */
+}
+
+/* InfoWindow styles (these are inline in JS, but keeping for reference if moved to CSS) */
+.gm-style .gm-iw-content {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  color: var(--color-text-dark);
+}
+
+.gm-style .gm-iw-title {
+  font-size: 1.4em; /* Larger title */
+  color: var(--color-primary-dark);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 700;
+}
+
+.gm-style .gm-iw-content div {
+  margin-bottom: var(--spacing-xs);
+  font-size: 0.9em; /* Slightly smaller content text */
+}
+
+.gm-style .gm-iw-content a {
+  color: var(--color-primary);
+  font-weight: bold;
+  text-decoration: none;
+  padding: var(--spacing-xs) var(--spacing-sm); /* Add padding to links */
+  border-radius: var(--border-radius-sm); /* Rounded corners for links */
+  transition: background-color 0.2s ease; /* Smooth transition */
+}
+
+.gm-style .gm-iw-content a:hover {
+  background-color: var(--color-primary-lighter); /* Light background on hover */
+  text-decoration: none; /* Keep no underline on hover */
 } 

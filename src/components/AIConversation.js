@@ -1,9 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Mic, MicOff, Bot, User, Sparkles, MapPin, Calendar, Clock, Heart, Edit3, Trash2, Plus, Check, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useTrip } from '../context/TripContext';
+import { useEnhancedAI } from '../services/aiService';
+import { toast } from 'react-hot-toast';
 import './AIConversation.css';
 
 const AIConversation = ({ onItineraryUpdate, initialItinerary }) => {
+  const { user } = useAuth();
+  const { currentTrip, updateExistingTrip } = useTrip();
+  const { conversationHistory, sendMessage, initializeForTrip, getSmartSuggestions, loading, error, resetConversation, extractItineraryChanges } = useEnhancedAI();
+  
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -26,8 +34,17 @@ const AIConversation = ({ onItineraryUpdate, initialItinerary }) => {
   };
 
   useEffect(() => {
+    if (user && currentTrip) {
+      initializeForTrip(user.travelPreferences, currentTrip.destination, currentTrip);
+    }
+    return () => {
+      resetConversation();
+    };
+  }, [user, currentTrip]);
+
+  useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [conversationHistory]);
 
   useEffect(() => {
     // Initialize conversation
@@ -53,174 +70,96 @@ Just tell me what you have in mind!`,
     }
   }, []);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (inputMessage.trim() === '') return;
 
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      content: inputMessage,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const userMessage = inputMessage;
     setInputMessage('');
     setIsTyping(true);
+    
+    // Immediately add user message to local history for quick display
+    // (the useEnhancedAI hook will eventually add it to its internal history)
+    // This local state is only for immediate UI feedback.
+    // conversationHistory from useEnhancedAI is the source of truth.
+    
+    const generatedSuggestions = getSmartSuggestions({ 
+      timeOfDay: new Date().getHours() < 12 ? 'morning' : 'evening',
+      interests: user?.travelPreferences?.interests || []
+    });
+    setSuggestions(generatedSuggestions);
 
     try {
-      // Simulate AI response (replace with actual API call)
-      const aiResponse = await generateAIResponse(inputMessage, currentItinerary);
+      const response = await sendMessage(userMessage);
       
-      const aiMessage = {
-        id: Date.now() + 1,
-        type: 'ai',
-        content: aiResponse.content,
-        timestamp: new Date(),
-        suggestions: aiResponse.suggestions || [],
-        itineraryChanges: aiResponse.itineraryChanges || null
-      };
+      // Attempt to extract structured itinerary changes
+      const changes = extractItineraryChanges(response);
 
-      setMessages(prev => [...prev, aiMessage]);
-      
-      // Update itinerary if changes were made
-      if (aiResponse.itineraryChanges) {
-        const updatedItinerary = applyItineraryChanges(currentItinerary, aiResponse.itineraryChanges);
-        setCurrentItinerary(updatedItinerary);
-        onItineraryUpdate(updatedItinerary);
+      if (changes && (changes.additions.length > 0 || changes.modifications.length > 0 || changes.removals.length > 0 || changes.timeChanges.length > 0)) {
+        console.log("Detected itinerary changes:", changes);
+        // Call a function to apply these changes to the currentTrip via TripContext
+        await applyItineraryChanges(changes);
+        toast.success('Itinerary updated based on AI suggestions!');
       }
-    } catch (error) {
-      console.error('Error generating AI response:', error);
-      const errorMessage = {
-        id: Date.now() + 1,
-        type: 'ai',
-        content: "I'm sorry, I'm having trouble processing your request right now. Please try again in a moment.",
-        timestamp: new Date(),
-        isError: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
+
+    } catch (err) {
+      console.error('Error sending message:', err);
+      toast.error(error || 'Failed to get AI response. Please try again.');
     } finally {
       setIsTyping(false);
     }
   };
 
-  const generateAIResponse = async (userInput, itinerary) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  const applyItineraryChanges = async (changes) => {
+    if (!currentTrip) return;
 
-    const lowerInput = userInput.toLowerCase();
-    
-    // Simple response logic (replace with actual OpenAI API call)
-    if (lowerInput.includes('museum') || lowerInput.includes('art')) {
-      return {
-        content: "Great choice! I've added some amazing museums and art galleries to your itinerary. The Louvre and Musée d'Orsay are must-visits in Paris. I've also included some smaller, hidden gems that locals love.",
-        suggestions: ["Add more cultural sites", "Show me the updated itinerary", "What about outdoor activities?"],
-        itineraryChanges: {
-          type: 'add_activities',
-          day: 1,
-          activities: [
-            {
-              time: '10:00',
-              name: 'Louvre Museum',
-              description: 'World-famous art museum with the Mona Lisa',
-              location: 'Rue de Rivoli, Paris',
-              duration: '3 hours',
-              cost: '$17',
-              tips: 'Book tickets online to skip the queue',
-              category: 'museum'
-            },
-            {
-              time: '14:00',
-              name: 'Musée d\'Orsay',
-              description: 'Impressionist and post-impressionist masterpieces',
-              location: '1 Rue de la Légion d\'Honneur, Paris',
-              duration: '2.5 hours',
-              cost: '$16',
-              tips: 'Visit on Thursday for extended hours',
-              category: 'museum'
-            }
-          ]
-        }
-      };
-    } else if (lowerInput.includes('food') || lowerInput.includes('restaurant')) {
-      return {
-        content: "I've updated your itinerary with some incredible local dining experiences! I've added authentic French bistros, a food market tour, and some hidden gems that tourists often miss.",
-        suggestions: ["Show me the food itinerary", "Add more budget options", "What about wine tasting?"],
-        itineraryChanges: {
-          type: 'add_activities',
-          day: 2,
-          activities: [
-            {
-              time: '12:00',
-              name: 'Le Comptoir du Relais',
-              description: 'Authentic French bistro with seasonal menu',
-              location: '9 Carrefour de l\'Odéon, Paris',
-              duration: '1.5 hours',
-              cost: '$45',
-              tips: 'Reservation recommended',
-              category: 'restaurant'
-            },
-            {
-              time: '18:00',
-              name: 'Marché des Enfants Rouges',
-              description: 'Historic covered market with diverse food stalls',
-              location: '39 Rue de Bretagne, Paris',
-              duration: '2 hours',
-              cost: '$25',
-              tips: 'Perfect for dinner and people watching',
-              category: 'food_market'
-            }
-          ]
-        }
-      };
-    } else if (lowerInput.includes('budget') || lowerInput.includes('cheap')) {
-      return {
-        content: "I've optimized your itinerary for budget-conscious travelers! I've replaced expensive activities with equally amazing but more affordable options, and added some free attractions that are just as impressive.",
-        suggestions: ["Show me budget-friendly activities", "What about free attractions?", "Keep the luxury options"],
-        itineraryChanges: {
-          type: 'modify_costs',
-          changes: [
-            { day: 1, activityIndex: 0, newCost: '$12' },
-            { day: 1, activityIndex: 1, newCost: '$8' }
-          ]
-        }
-      };
-    } else {
-      return {
-        content: "I understand you'd like to modify your itinerary. I can help you add activities, change dates, adjust your budget, or suggest new places to visit. What specific changes would you like to make?",
-        suggestions: ["Add museums and galleries", "Show me outdoor activities", "I want budget-friendly options", "Add local food experiences"]
-      };
-    }
-  };
+    let updatedDailyItineraries = [...currentTrip.dailyItineraries];
 
-  const applyItineraryChanges = (itinerary, changes) => {
-    if (!itinerary) return itinerary;
-
-    const updatedItinerary = { ...itinerary };
-
-    if (changes.type === 'add_activities') {
-      if (!updatedItinerary.dailyItineraries) {
-        updatedItinerary.dailyItineraries = [];
-      }
-      
-      if (!updatedItinerary.dailyItineraries[changes.day - 1]) {
-        updatedItinerary.dailyItineraries[changes.day - 1] = {
-          day: changes.day,
-          date: new Date().toLocaleDateString(),
-          theme: `Day ${changes.day}`,
-          activities: []
+    // Handle additions
+    changes.additions.forEach(add => {
+      const dayIndex = add.day - 1;
+      if (updatedDailyItineraries[dayIndex]) {
+        updatedDailyItineraries[dayIndex].activities.push(add.activity);
+      } else {
+        // Create new day if it doesn't exist (e.g., AI suggests activity for a future day)
+        updatedDailyItineraries[dayIndex] = {
+          day: add.day,
+          date: new Date().toISOString(), // Placeholder, ideally get from AI or trip dates
+          theme: `Day ${add.day} activities`,
+          activities: [add.activity]
         };
+        updatedDailyItineraries.sort((a, b) => a.day - b.day); // Keep sorted by day
       }
+    });
 
-      updatedItinerary.dailyItineraries[changes.day - 1].activities.push(...changes.activities);
-    } else if (changes.type === 'modify_costs') {
-      changes.changes.forEach(change => {
-        if (updatedItinerary.dailyItineraries[change.day - 1]?.activities[change.activityIndex]) {
-          updatedItinerary.dailyItineraries[change.day - 1].activities[change.activityIndex].cost = change.newCost;
-        }
-      });
+    // Handle modifications
+    changes.modifications.forEach(mod => {
+      const dayIndex = mod.day - 1;
+      if (updatedDailyItineraries[dayIndex]) {
+        updatedDailyItineraries[dayIndex].activities = updatedDailyItineraries[dayIndex].activities.map(activity => {
+          if (activity._id === mod.activityId) {
+            return { ...activity, ...mod.updates };
+          }
+          return activity;
+        });
+      }
+    });
+
+    // Handle removals
+    changes.removals.forEach(rem => {
+      const dayIndex = rem.day - 1;
+      if (updatedDailyItineraries[dayIndex]) {
+        updatedDailyItineraries[dayIndex].activities = updatedDailyItineraries[dayIndex].activities.filter(activity =>
+          activity._id !== rem.activityId
+        );
+      }
+    });
+
+    // Send the updated trip to the backend via TripContext
+    const result = await updateExistingTrip(String(currentTrip._id), { dailyItineraries: updatedDailyItineraries });
+    if (!result.success) {
+      toast.error(result.error || 'Failed to save itinerary changes.');
     }
-
-    return updatedItinerary;
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -231,7 +170,7 @@ Just tell me what you have in mind!`,
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSendMessage(e);
     }
   };
 
@@ -257,7 +196,7 @@ Just tell me what you have in mind!`,
         <div className="header-actions">
           <motion.button
             className="action-btn"
-            onClick={() => onItineraryUpdate(currentItinerary)}
+            onClick={(e) => { e.preventDefault(); handleSendMessage(e); }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -269,31 +208,31 @@ Just tell me what you have in mind!`,
 
       <div className="messages-container">
         <AnimatePresence>
-          {messages.map((message) => (
+          {conversationHistory.map((msg, index) => (
             <motion.div
-              key={message.id}
-              className={`message ${message.type}`}
+              key={msg.id}
+              className={`message ${msg.role}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
               <div className="message-avatar">
-                {message.type === 'ai' ? <Bot size={20} /> : <User size={20} />}
+                {msg.role === 'ai' ? <Bot size={20} /> : <User size={20} />}
               </div>
               <div className="message-content">
-                <div className="message-text">{message.content}</div>
+                <div className="message-text">{msg.content}</div>
                 <div className="message-timestamp">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 
-                {message.suggestions && message.suggestions.length > 0 && (
+                {msg.suggestions && msg.suggestions.length > 0 && (
                   <div className="message-suggestions">
-                    {message.suggestions.map((suggestion, index) => (
+                    {msg.suggestions.map((suggestion, index) => (
                       <motion.button
                         key={index}
                         className="suggestion-btn"
-                        onClick={() => handleSuggestionClick(suggestion)}
+                        onClick={(e) => { e.preventDefault(); handleSuggestionClick(suggestion); }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >

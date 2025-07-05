@@ -1,0 +1,21 @@
+.voice-waveform {
+  @apply relative flex items-center justify-center gap-1 h-6 w-12;
+}
+
+.waveform-bar {
+  @apply w-1 bg-cyan-400 rounded-full;
+  height: 4px;
+  transform-origin: bottom;
+}
+
+.voice-waveform.active .waveform-bar {
+  @apply bg-red-400;
+}
+
+.voice-pulse {
+  @apply absolute inset-0 rounded-full border-2 border-cyan-400;
+}
+
+.voice-waveform.active .voice-pulse {
+  @apply border-red-400;
+} 

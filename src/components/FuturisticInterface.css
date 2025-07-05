@@ -1,0 +1,493 @@
+/* Futuristic Interface - Command Center Style */
+.futuristic-interface {
+  @apply min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+}
+
+/* Neural Network Background */
+.neural-background {
+  @apply absolute inset-0 opacity-20;
+  background-image: 
+    linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: neural-pulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes neural-pulse {
+  0% { opacity: 0.1; }
+  100% { opacity: 0.3; }
+}
+
+/* Interface Container */
+.interface-container {
+  @apply relative z-10 min-h-screen flex flex-col;
+}
+
+/* Command Header */
+.command-header {
+  @apply flex items-center justify-between p-6 border-b border-cyan-500/20 backdrop-blur-xl bg-slate-900/80;
+  box-shadow: 0 4px 32px rgba(6, 182, 212, 0.1);
+}
+
+.header-left {
+  @apply flex items-center gap-6;
+}
+
+.logo-section {
+  @apply flex items-center gap-4;
+}
+
+.logo-orb {
+  @apply w-12 h-12 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white shadow-lg;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+}
+
+.logo-text h1 {
+  @apply text-xl font-bold text-white tracking-wider;
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
+.logo-text span {
+  @apply text-sm text-cyan-300 font-mono;
+}
+
+.header-center {
+  @apply flex-1 flex justify-center;
+}
+
+.mode-selector {
+  @apply flex items-center gap-2 p-2 bg-slate-800/50 rounded-2xl border border-slate-600/30 backdrop-blur-xl;
+}
+
+.mode-button {
+  @apply relative flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300;
+  @apply text-slate-300 hover:text-white;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.mode-button.active {
+  @apply text-white;
+  background: linear-gradient(135deg, var(--mode-color, #06b6d4), rgba(255, 255, 255, 0.1));
+  border-color: var(--mode-color, #06b6d4);
+  box-shadow: 
+    0 0 20px var(--mode-color, #06b6d4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.mode-glow {
+  @apply absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300;
+  background: radial-gradient(circle, var(--mode-color, #06b6d4) 0%, transparent 70%);
+}
+
+.mode-button:hover .mode-glow {
+  @apply opacity-20;
+}
+
+.header-right {
+  @apply flex items-center gap-6;
+}
+
+.status-indicators {
+  @apply flex items-center gap-4;
+}
+
+.status-item {
+  @apply flex items-center gap-2 text-sm font-mono;
+}
+
+.status-dot {
+  @apply w-2 h-2 rounded-full bg-slate-500;
+}
+
+.status-dot.online {
+  @apply bg-green-400;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); }
+  50% { box-shadow: 0 0 20px rgba(34, 197, 94, 1); }
+}
+
+.user-profile {
+  @apply flex items-center gap-3 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-600/30 backdrop-blur-xl;
+}
+
+.avatar {
+  @apply w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white;
+}
+
+/* Main Content */
+.main-content {
+  @apply flex-1 p-6;
+}
+
+/* Command Center */
+.command-center {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-6 h-full;
+}
+
+.messages-panel {
+  @apply lg:col-span-2 h-full;
+}
+
+.command-input-panel {
+  @apply lg:col-span-1;
+}
+
+/* Holographic Card Base (defined in HolographicCard component) */
+
+.panel-header {
+  @apply flex items-center justify-between p-6 border-b border-slate-600/30;
+}
+
+.panel-header h3 {
+  @apply text-lg font-semibold text-white;
+}
+
+.live-indicator {
+  @apply flex items-center gap-2 text-sm font-mono text-green-400;
+}
+
+.pulse-dot {
+  @apply w-2 h-2 rounded-full bg-green-400;
+  animation: pulse-green 1s infinite;
+}
+
+/* Messages */
+.messages-container {
+  @apply flex flex-col gap-4 p-6 max-h-96 overflow-y-auto;
+}
+
+.message {
+  @apply p-4 rounded-xl border backdrop-blur-sm transition-all duration-300;
+}
+
+.message-user {
+  @apply bg-blue-500/10 border-blue-500/30 ml-auto max-w-xs;
+}
+
+.message-ai {
+  @apply bg-cyan-500/10 border-cyan-500/30 mr-auto max-w-lg;
+}
+
+.message-system {
+  @apply bg-yellow-500/10 border-yellow-500/30 mx-auto max-w-md text-center;
+}
+
+.priority-high {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+.priority-warning {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.message-header {
+  @apply flex items-center justify-between mb-2 text-xs font-mono;
+}
+
+.message-sender {
+  @apply text-cyan-300 font-semibold;
+}
+
+.message-time {
+  @apply text-slate-400;
+}
+
+.message-content {
+  @apply text-white whitespace-pre-wrap leading-relaxed;
+}
+
+.processing {
+  @apply bg-purple-500/10 border-purple-500/30;
+}
+
+.processing-indicator {
+  @apply flex items-center gap-3;
+}
+
+.processing-dots {
+  @apply flex gap-1;
+}
+
+.processing-dots .dot {
+  @apply w-2 h-2 rounded-full bg-purple-400;
+  animation: loading-dot 1.4s infinite ease-in-out;
+}
+
+.processing-dots .dot:nth-child(1) { animation-delay: -0.32s; }
+.processing-dots .dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes loading-dot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* Command Input */
+.input-header {
+  @apply flex items-center justify-between p-6 border-b border-slate-600/30;
+}
+
+.input-header h4 {
+  @apply text-lg font-semibold text-white;
+}
+
+.command-input-container {
+  @apply p-6;
+}
+
+.input-wrapper {
+  @apply relative flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-600/30 backdrop-blur-xl;
+  @apply focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20;
+}
+
+.command-input {
+  @apply flex-1 bg-transparent border-0 text-white placeholder:text-slate-400;
+  @apply focus:outline-none focus:ring-0;
+  font-family: 'Space Mono', monospace;
+}
+
+.input-actions {
+  @apply flex items-center gap-2;
+}
+
+.voice-button {
+  @apply w-10 h-10 rounded-full bg-slate-700/50 border border-slate-600/30 flex items-center justify-center;
+  @apply text-slate-300 hover:text-white transition-all duration-300;
+}
+
+.voice-button.active {
+  @apply bg-red-500/20 border-red-500/50 text-red-400;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
+}
+
+.send-button {
+  @apply w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center;
+  @apply text-white hover:shadow-lg transition-all duration-300 disabled:opacity-50;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+}
+
+.send-button:hover {
+  box-shadow: 0 6px 30px rgba(6, 182, 212, 0.5);
+}
+
+/* Quick Commands */
+.quick-commands {
+  @apply mt-6 pt-6 border-t border-slate-600/30;
+}
+
+.quick-commands-label {
+  @apply text-sm font-mono text-slate-400 mb-3;
+}
+
+.quick-commands-grid {
+  @apply space-y-2;
+}
+
+.quick-command-button {
+  @apply w-full p-3 text-left text-sm bg-slate-800/30 border border-slate-600/20 rounded-lg;
+  @apply text-slate-300 hover:text-white hover:bg-slate-700/50 hover:border-cyan-500/30;
+  @apply transition-all duration-300;
+}
+
+.quick-command-button:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.1);
+}
+
+/* Trip Preview Card */
+.trip-preview-card {
+  @apply mt-4 p-4 bg-slate-800/30 border border-slate-600/30 rounded-xl backdrop-blur-sm;
+}
+
+.trip-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.trip-destination {
+  @apply flex items-center gap-2 text-white font-semibold;
+}
+
+.trip-duration {
+  @apply flex items-center gap-2 text-sm text-slate-300;
+}
+
+.trip-stats {
+  @apply flex items-center justify-around py-4 border-y border-slate-600/30;
+}
+
+.stat {
+  @apply text-center;
+}
+
+.stat-value {
+  @apply block text-lg font-bold text-cyan-400;
+}
+
+.stat-label {
+  @apply text-xs text-slate-400 font-mono;
+}
+
+.trip-actions {
+  @apply flex gap-2 mt-4;
+}
+
+.action-btn {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300;
+  @apply bg-slate-700/50 border border-slate-600/30 text-slate-300 hover:text-white;
+}
+
+.action-btn.primary {
+  @apply bg-gradient-to-r from-cyan-400 to-blue-500 border-transparent text-white;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+}
+
+/* Explore Center */
+.explore-center {
+  @apply h-full;
+}
+
+.map-panel.full-screen {
+  @apply h-full;
+}
+
+.map-controls {
+  @apply flex gap-2;
+}
+
+.control-btn {
+  @apply flex items-center gap-2 px-3 py-1 text-sm bg-slate-700/50 border border-slate-600/30 rounded-lg;
+  @apply text-slate-300 hover:text-white transition-all duration-300;
+}
+
+/* Create & Analyze Centers */
+.create-center,
+.analyze-center {
+  @apply flex items-center justify-center h-full;
+}
+
+.create-panel,
+.analyze-panel {
+  @apply w-full max-w-2xl;
+}
+
+.design-tools {
+  @apply flex gap-2;
+}
+
+.tool-btn {
+  @apply w-8 h-8 rounded-lg bg-slate-700/50 border border-slate-600/30 flex items-center justify-center;
+  @apply text-slate-300 hover:text-white transition-all duration-300;
+}
+
+.create-content,
+.analyze-content {
+  @apply p-12 text-center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .command-header {
+    @apply flex-col gap-4 items-start;
+  }
+  
+  .header-center {
+    @apply w-full justify-start;
+  }
+  
+  .mode-selector {
+    @apply w-full overflow-x-auto;
+  }
+  
+  .command-center {
+    @apply grid-cols-1 gap-4;
+  }
+  
+  .messages-panel {
+    @apply order-2;
+  }
+  
+  .command-input-panel {
+    @apply order-1;
+  }
+}
+
+@media (max-width: 768px) {
+  .futuristic-interface {
+    @apply text-sm;
+  }
+  
+  .command-header {
+    @apply p-4;
+  }
+  
+  .main-content {
+    @apply p-4;
+  }
+  
+  .mode-button {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .mode-button span {
+    @apply hidden;
+  }
+  
+  .quick-commands-grid {
+    @apply grid grid-cols-1 gap-2;
+  }
+  
+  .trip-stats {
+    @apply flex-col gap-2 py-2;
+  }
+  
+  .stat {
+    @apply flex items-center justify-between w-full;
+  }
+  
+  .trip-actions {
+    @apply flex-col;
+  }
+}
+
+/* Scrollbar Styling */
+.messages-container::-webkit-scrollbar {
+  @apply w-1;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  @apply bg-slate-800/30;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  @apply bg-cyan-500/30 rounded-full;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  @apply bg-cyan-500/50;
+}
+
+/* Custom Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+.command-input,
+.message-sender,
+.quick-commands-label,
+.status-item,
+.live-indicator,
+.stat-label {
+  font-family: 'Space Mono', monospace;
+} 

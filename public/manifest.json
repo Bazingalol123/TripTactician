@@ -1,0 +1,62 @@
+{
+  "short_name": "Travel Command",
+  "name": "Travel Command Center - AI Travel Planner",
+  "description": "Revolutionary AI-powered travel planning command center with futuristic interface",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2306b6d4'/><path d='M30 50 L45 35 L70 50 L45 65 Z' fill='white'/></svg>",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2306b6d4'/><path d='M30 50 L45 35 L70 50 L45 65 Z' fill='white'/></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#06b6d4",
+  "background_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "productivity", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800'><rect width='400' height='800' fill='%230f172a'/><text x='200' y='400' text-anchor='middle' fill='%2306b6d4' font-size='24' font-family='monospace'>TRAVEL COMMAND CENTER</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "400x800",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Plan Trip",
+      "short_name": "Plan",
+      "description": "Start planning a new trip",
+      "url": "/command?mode=create",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z'/></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Explore Maps",
+      "short_name": "Maps",
+      "description": "Explore interactive travel maps",
+      "url": "/command?mode=explore",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+} 
