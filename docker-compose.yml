@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_models:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: nodemon server/index.js
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5000:5000"
+    environment:
+      # Core configuration
+      - PORT=5000
+      # Use local Docker MongoDB (free, no account needed)
+      - MONGODB_URI=mongodb://mongo:27017/traveltrek
+      # Atlas (uncomment if you want cloud DB):
+      # - MONGODB_URI=mongodb+srv://omerkipod123:omerkipod123@cluster0.72xzf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+
+      # LLM configuration – switch to OpenAI for cheaper model
+      - LLM_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      # If you wish to fallback to local Ollama, keep these vars
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
+      - NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
+      - OVERPASS_API_URL=https://overpass-api.de/api
+      # Queue / Redis
+      - DOCKER=true
+      - REDIS_HOST=redis
+      - DUFFEL_ACCESS_TOKEN=${DUFFEL_ACCESS_TOKEN}
+    depends_on:
+      - mongo
+      - redis
+      - ollama
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    command: npm start
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  ollama_models: 

@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent Leaflet tiles from being cut off by overflow:hidden on parent */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide scrollbar but keep scroll behaviour */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,17 @@
+FROM node:18
+
+# Create app directory
+WORKDIR /app
+ENV MONGODB_URI=mongodb://host.docker.internal:27017/travel_command_center
+# Install app dependencies
+COPY package*.json ./
+RUN npm install && npm install -g nodemon
+
+# Bundle app source
+COPY . .
+
+# Expose API port
+EXPOSE 5000
+
+# Start the backend in dev mode with hot reload
+CMD ["nodemon", "server/index.js"] 
