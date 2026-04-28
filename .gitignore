@@ -48,3 +48,15 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Offline map tiles (pre-cached, not needed in repo)
+public/tiles/
+
+# Postman environment (may contain tokens/base URLs)
+*.postman_environment.json
+
+# Session planning docs (working notes, not part of codebase)
+SESSION_*.md
+SESSIONS_*.md
+TASK_*.md
+MISALIGNMENT_FIXES.md

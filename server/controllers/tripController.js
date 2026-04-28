@@ -1,242 +1,182 @@
-const Trip = require('../models/Trip');
+import asyncHandler from '../utils/asyncHandler.js';
+import Trip from '../models/Trip.js';
+import Activity from '../models/Activity.js';
+import Preference from '../models/Preference.js';
+import AppError from '../utils/AppError.js';
 
-/**
- * Creates a structured activity object from a raw Google Places API result.
- * @param {object} place - The raw Google Place object.
- * @param {string} categoryHint - A hint for the category if not determinable from place types.
- * @returns {object} A structured activity object matching the Trip schema.
- */
-function createActivityFromGooglePlace(place, categoryHint = 'attraction') {
-  // Helper to get the primary category from Google's types array
-  const getCategory = (types) => {
-    const typeMap = {
-      restaurant: 'restaurant',
-      cafe: 'restaurant',
-      bakery: 'restaurant',
-      tourist_attraction: 'attraction',
-      museum: 'attraction',
-      art_gallery: 'attraction',
-      church: 'culture',
-      mosque: 'culture',
-      synagogue: 'culture',
-      place_of_worship: 'culture',
-      park: 'nature',
-      shopping_mall: 'shopping',
-      store: 'shopping',
-      night_club: 'entertainment',
-      bar: 'entertainment',
-    };
-    for (const type of types) {
-      if (typeMap[type]) return typeMap[type];
-    }
-    return categoryHint;
-  };
-
-  const activity = {
-    name: place.name || 'Unknown Place',
-    description: `A popular spot in the area, known for being a ${place.types?.[0]?.replace(/_/g, ' ') || 'local favorite'}.`,
-    location: place.vicinity || place.formatted_address || 'Address not available',
-    time: 'To be decided',
-    duration: '60 minutes',
-    cost: place.price_level ? String(place.price_level * 20) : '0', // Approximate cost
-    category: getCategory(place.types || []),
-    latitude: typeof place.geometry?.location?.lat === 'function' 
-      ? place.geometry.location.lat() 
-      : place.geometry?.location?.lat,
-    longitude: typeof place.geometry?.location?.lng === 'function' 
-      ? place.geometry.location.lng() 
-      : place.geometry?.location?.lng,
-    rating: place.rating || 0,
-    tips: `Check opening hours before visiting. Ratings are subject to change.`,
-    placeId: place.place_id,
-    photos: place.photos?.map(p => ({
-      photo_reference: p.photo_reference,
-      height: p.height,
-      width: p.width,
-      html_attributions: p.html_attributions,
-    })) || [],
-  };
-
-  if (!activity.latitude || !activity.longitude) {
-    console.warn(`Missing coordinates for place: ${activity.name}`);
+const buildDays = (startDate, endDate) => {
+  const days = [];
+  const d = new Date(startDate);
+  const end = new Date(endDate);
+  let dayNumber = 1;
+  while (d <= end) {
+    days.push({ dayNumber, date: new Date(d), label: '', ordered: false });
+    d.setDate(d.getDate() + 1);
+    dayNumber++;
   }
-  
-  return activity;
-}
+  return days;
+};
 
-exports.createTrip = async (req, res) => {
-  try {
-    const { destination, title, ...rest } = req.body;
-    const trip = await Trip.create({
-      title: title || destination,
-      destination,
-      userId: req.user.id,
-      ...rest
+const isParticipant = (trip, userId) =>
+  trip.participants.some((p) => {
+    const id = p.userId?._id || p.userId;
+    return id.toString() === userId.toString();
+  });
+
+export const createTrip = asyncHandler(async (req, res) => {
+  const { name, destination, startDate, endDate, currency } = req.body;
+  const autoName = name || `${destination?.name || 'My trip'} · ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+  const trip = await Trip.create({
+    name: autoName,
+    destination,
+    startDate: new Date(startDate),
+    endDate: new Date(endDate),
+    status: 'generating',
+    participants: [{ userId: req.user.id, role: 'owner' }],
+    days: buildDays(startDate, endDate),
+    currency: currency || 'USD',
+    lastModifiedBy: req.user.id,
+  });
+
+  res.status(201).json({ trip });
+
+  // Fire and forget — response already sent
+  import('../services/generationService.js')
+    .then(({ runGeneration }) => {
+      console.log('[generation] auto-starting for new trip', trip._id);
+      return runGeneration(trip._id);
+    })
+    .catch((err) => {
+      console.error('[generation] auto-generation failed for trip', trip._id, err.message);
+      Trip.findByIdAndUpdate(trip._id, { status: 'active' }).catch(() => {});
     });
-    res.status(201).json(trip);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to create trip', details: err.message });
-  }
-};
+});
 
-exports.getTrips = async (req, res) => {
-  try {
-    const trips = await Trip.find({ userId: req.user.id });
-    res.json(trips);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch trips' });
-  }
-};
+export const getMyTrips = asyncHandler(async (req, res) => {
+  const trips = await Trip.find({ 'participants.userId': req.user.id })
+    .populate('participants.userId', 'name email')
+    .sort({ createdAt: -1 });
+  res.json({ trips });
+});
 
-exports.getTripById = async (req, res) => {
-  try {
-    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch trip' });
-  }
-};
+export const getTrip = asyncHandler(async (req, res) => {
+  const trip = await Trip.findById(req.params.id)
+    .populate('participants.userId', 'name email');
+  if (!trip) return res.status(404).json({ error: 'Trip not found' });
+  if (!isParticipant(trip, req.user.id)) return res.status(403).json({ error: 'Forbidden' });
+  res.json({ trip });
+});
 
-exports.updateTrip = async (req, res) => {
-  try {
-    const trip = await Trip.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      req.body,
-      { new: true }
-    );
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update trip' });
-  }
-};
+export const updateTrip = asyncHandler(async (req, res) => {
+  const trip = await Trip.findById(req.params.id);
+  if (!trip) return res.status(404).json({ error: 'Trip not found' });
+  if (!isParticipant(trip, req.user.id)) return res.status(403).json({ error: 'Forbidden' });
 
-exports.deleteTrip = async (req, res) => {
-  try {
-    const trip = await Trip.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    res.json({ message: 'Trip deleted' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete trip' });
-  }
-};
+  const { startDate, endDate, ...rest } = req.body;
+  const updates = { ...rest, lastModifiedBy: req.user.id };
 
-// Add activity from recommendation to trip
-exports.addRecommendationToTrip = async (req, res) => {
-  try {
-    const { dayIndex, recommendation, insertIndex = -1 } = req.body;
-    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
-    
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    if (!trip.dailyItineraries[dayIndex]) {
-      return res.status(400).json({ error: 'Invalid day index' });
+  if (startDate || endDate) {
+    const newStart = startDate ? new Date(startDate) : trip.startDate;
+    const newEnd = endDate ? new Date(endDate) : trip.endDate;
+    const datesChanged =
+      newStart.getTime() !== trip.startDate.getTime() ||
+      newEnd.getTime() !== trip.endDate.getTime();
+    if (datesChanged) {
+      updates.startDate = newStart;
+      updates.endDate = newEnd;
+      updates.days = buildDays(newStart, newEnd);
+      // TODO Phase 3: write ChangeLog entry { action: 'changed_dates', payload: { from, to } }
     }
-
-    // Convert recommendation to activity format using the new utility function
-    const newActivity = createActivityFromGooglePlace(recommendation);
-
-    // Insert at specified index or append
-    if (insertIndex >= 0 && insertIndex < trip.dailyItineraries[dayIndex].activities.length) {
-      trip.dailyItineraries[dayIndex].activities.splice(insertIndex, 0, newActivity);
-    } else {
-      trip.dailyItineraries[dayIndex].activities.push(newActivity);
-    }
-
-    const updatedTrip = await trip.save();
-    res.json({ 
-      success: true, 
-      trip: updatedTrip,
-      message: 'Activity added successfully' 
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to add recommendation', details: err.message });
   }
-};
 
-// Replace existing activity with recommendation
-exports.replaceActivityWithRecommendation = async (req, res) => {
-  try {
-    const { dayIndex, activityIndex, recommendation } = req.body;
-    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
-    
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    if (!trip.dailyItineraries[dayIndex] || !trip.dailyItineraries[dayIndex].activities[activityIndex]) {
-      return res.status(400).json({ error: 'Invalid day or activity index' });
-    }
+  const updated = await Trip.findByIdAndUpdate(req.params.id, updates, {
+    new: true,
+    runValidators: true,
+  });
+  res.json({ trip: updated });
+});
 
-    // Convert recommendation to activity format, keeping original time
-    const replacementActivity = {
-      ...createActivityFromGooglePlace(recommendation),
-      time: trip.dailyItineraries[dayIndex].activities[activityIndex].time, // Keep original time
-    };
+export const deleteTrip = asyncHandler(async (req, res) => {
+  const trip = await Trip.findById(req.params.id);
+  if (!trip) return res.status(404).json({ error: 'Trip not found' });
+  if (!isParticipant(trip, req.user.id)) return res.status(403).json({ error: 'Forbidden' });
 
-    // Replace the activity
-    trip.dailyItineraries[dayIndex].activities[activityIndex] = replacementActivity;
+  await Activity.deleteMany({ tripId: req.params.id });
+  await Preference.deleteMany({ tripId: req.params.id });
+  // TODO Phase 3: deleteMany Invite, Notification where tripId
+  await Trip.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Trip deleted' });
+});
 
-    const updatedTrip = await trip.save();
-    res.json({ 
-      success: true, 
-      trip: updatedTrip,
-      message: 'Activity replaced successfully' 
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to replace activity', details: err.message });
+export const setPreferences = asyncHandler(async (req, res) => {
+  const tripId = req.params.id;
+  const userId = req.user.id;
+  const { pace, interests, morningPerson, hardAvoids } = req.body;
+
+  const preference = await Preference.findOneAndUpdate(
+    { userId, tripId },
+    { pace, interests, morningPerson, hardAvoids: hardAvoids || '' },
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+
+  // Update trip participant's preferencesId
+  await Trip.updateOne(
+    { _id: tripId, 'participants.userId': userId },
+    { $set: { 'participants.$.preferencesId': preference._id } }
+  );
+
+  // Check if both participants have preferences — if so, update status
+  const trip = await Trip.findById(tripId);
+  const allPrefsSet = await Promise.all(
+    trip.participants.map((p) => Preference.exists({ userId: p.userId, tripId }))
+  );
+  if (allPrefsSet.every(Boolean) && trip.status === 'solo') {
+    // solo trip owner just set prefs — leave as solo until partner joins
   }
-};
-
-// Remove activity from trip
-exports.removeActivity = async (req, res) => {
-  try {
-    const { dayIndex, activityIndex } = req.body;
-    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
-    
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    if (!trip.dailyItineraries[dayIndex] || !trip.dailyItineraries[dayIndex].activities[activityIndex]) {
-      return res.status(400).json({ error: 'Invalid day or activity index' });
-    }
-
-    // Remove the activity
-    trip.dailyItineraries[dayIndex].activities.splice(activityIndex, 1);
-
-    const updatedTrip = await trip.save();
-    res.json({ 
-      success: true, 
-      trip: updatedTrip,
-      message: 'Activity removed successfully' 
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to remove activity', details: err.message });
+  if (allPrefsSet.every(Boolean) && trip.status === 'pending_partner') {
+    await Trip.findByIdAndUpdate(tripId, { status: 'generating' });
+    import('../services/generationService.js')
+      .then(({ runGeneration }) => runGeneration(tripId))
+      .catch((err) => console.error('[generation] regen after partner joined failed', tripId, err.message));
   }
-};
 
-// Reorder activities within a day
-exports.reorderActivities = async (req, res) => {
-  try {
-    const { dayIndex, fromIndex, toIndex } = req.body;
-    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
-    
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-    if (!trip.dailyItineraries[dayIndex]) {
-      return res.status(400).json({ error: 'Invalid day index' });
-    }
+  res.json({ preference });
+});
 
-    const activities = trip.dailyItineraries[dayIndex].activities;
-    if (fromIndex < 0 || fromIndex >= activities.length || toIndex < 0 || toIndex >= activities.length) {
-      return res.status(400).json({ error: 'Invalid activity indices' });
-    }
+export const getMyPreferences = asyncHandler(async (req, res) => {
+  const preference = await Preference.findOne({ userId: req.user.id, tripId: req.params.id });
+  if (!preference) throw new AppError('Preferences not set', 404);
+  res.json({ preference });
+});
 
-    // Move activity from fromIndex to toIndex
-    const [movedActivity] = activities.splice(fromIndex, 1);
-    activities.splice(toIndex, 0, movedActivity);
+export const getPartnerPreferences = asyncHandler(async (req, res) => {
+  const trip = req.trip; // attached by participantCheck
+  const partner = trip.participants.find((p) => !p.userId.equals(req.user.id));
+  if (!partner) throw new AppError('No partner on this trip', 404);
+  const preference = await Preference.findOne({ userId: partner.userId, tripId: req.params.id });
+  if (!preference) throw new AppError('Partner has not set preferences yet', 404);
+  res.json({ preference });
+});
 
-    const updatedTrip = await trip.save();
-    res.json({ 
-      success: true, 
-      trip: updatedTrip,
-      message: 'Activities reordered successfully' 
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to reorder activities', details: err.message });
-  }
-}; 
+export const triggerGeneration = asyncHandler(async (req, res) => {
+  const trip = req.trip;
+  if (trip.status === 'generating') throw new AppError('Generation already in progress', 409);
+
+  await Trip.findByIdAndUpdate(trip._id, { status: 'generating' });
+  res.json({ message: 'Generation started', status: 'generating' });
+
+  // Fire-and-forget — response already sent
+  import('../services/generationService.js')
+    .then(({ runGeneration }) => {
+      console.log('[generation] starting for trip', trip._id);
+      return runGeneration(trip._id);
+    })
+    .then(() => console.log('[generation] complete for trip', trip._id))
+    .catch((err) => console.error('[generation] FAILED for trip', trip._id, '—', err.message, err.stack));
+});
+
+export const getGenerationStatus = asyncHandler(async (req, res) => {
+  const trip = await Trip.findById(req.params.id).select('status generatedAt');
+  if (!trip) throw new AppError('Trip not found', 404);
+  res.json({ status: trip.status, generatedAt: trip.generatedAt || null });
+});

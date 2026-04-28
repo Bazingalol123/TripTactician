@@ -1,0 +1,1333 @@
+{
+  "info": {
+    "name": "TripTactician API",
+    "description": "Full API test collection for TripTactician.\n\nIMPORT ORDER:\n1. Import this collection\n2. Import TripTactician.postman_environment.json\n3. Select the TripTactician environment before running any requests\n\nTESTING FLOW:\n1. Health Check\n2. Auth / Register → saves token + userId automatically\n3. Auth / Login → alternative, saves token + userId automatically\n4. Trips / Create Trip → saves tripId automatically\n5. Trips / Set My Preferences\n6. Invites / Create Invite → saves inviteToken automatically\n7. Invites / Get Invite (validate token)\n8. Invites / Accept Invite (as partner — use partnerToken)\n9. Trips / Trigger Generation\n10. Trips / Get Generation Status (poll until active)\n11. Activities / Add Activity → saves activityId automatically\n12. Activities / Get All Activities\n13. Activities / Update Activity\n14. Activities / Reorder Activities\n15. Activities / Remove Activity\n16. Notifications / Get All\n17. Trips / Delete Trip → cleanup\n\nAll authenticated requests use {{token}} from environment automatically.\nplaceRoutes and fillGaps return 501 (not implemented yet).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "No auth required. Should return { status: 'ok' }. Run this first to confirm the server is up."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Server is up', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is ok', () => {",
+                  "  pm.expect(pm.response.json().status).to.equal('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Register and Login both auto-save token + userId to the environment.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Test\",\n  \"email\": \"alex@test.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Create a new user. Run once — use Login for subsequent sessions to avoid 409 duplicate email."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has token', () => pm.expect(res).to.have.property('token'));",
+                  "pm.test('Has user', () => pm.expect(res).to.have.property('user'));",
+                  "if (res.token) { pm.environment.set('token', res.token); console.log('✓ token saved'); }",
+                  "if (res.user?.id) { pm.environment.set('userId', res.user.id); console.log('✓ userId saved:', res.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@test.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Login with existing credentials. Saves token and userId to environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has token', () => pm.expect(res).to.have.property('token'));",
+                  "if (res.token) { pm.environment.set('token', res.token); console.log('✓ token saved'); }",
+                  "if (res.user?.id) { pm.environment.set('userId', res.user.id); console.log('✓ userId saved:', res.user.id); }",
+                  "if (res.token) {",
+                  "  try {",
+                  "    const payload = JSON.parse(atob(res.token.split('.')[1]));",
+                  "    console.log('Token expires at:', new Date(payload.exp * 1000).toISOString());",
+                  "  } catch(e) {}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Verify the current token is valid and see the logged-in user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has user', () => pm.expect(pm.response.json()).to.have.property('user'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Updated\",\n  \"preferredCurrency\": \"ILS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Update name and/or preferredCurrency. Both fields optional."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has user', () => pm.expect(pm.response.json()).to.have.property('user'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@test.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Always returns 200 regardless of whether the email exists (security by design).\n\nNOTE: Email sending is a TODO. Retrieve the reset token directly from MongoDB:\ndb.users.findOne({ email: 'alex@test.com' }, { resetPasswordToken: 1 })"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has message', () => pm.expect(pm.response.json()).to.have.property('message'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetPasswordToken}}\",\n  \"password\": \"newpassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Set a new password using the token from forgot-password.\nSet resetPasswordToken manually in environment from MongoDB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 400', () => pm.expect([200, 400]).to.include(pm.response.code));",
+                  "console.log(pm.response.json()?.message || pm.response.json()?.error);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify/{{verificationToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify", "{{verificationToken}}"]
+            },
+            "description": "Verify email with token from registration.\nSet verificationToken from MongoDB:\ndb.users.findOne({ email: 'alex@test.com' }, { verificationToken: 1 })"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 400', () => pm.expect([200, 400]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Trips",
+      "description": "Trip CRUD, preferences, and generation. All routes require auth.\n/:id routes also require participantCheck.",
+      "item": [
+        {
+          "name": "Get My Trips",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips"]
+            },
+            "description": "Returns all trips where the current user is a participant."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has trips array', () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.trips).to.be.an('array');",
+                  "});",
+                  "console.log('Trip count:', pm.response.json().trips?.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tokyo with Sam\",\n  \"destination\": {\n    \"name\": \"Tokyo, Japan\",\n    \"placeId\": \"ChIJ51cu8IcbXWARiRtXIothAS4\",\n    \"coords\": { \"lat\": 35.6762, \"lng\": 139.6503 },\n    \"country\": \"JP\",\n    \"timezone\": \"Asia/Tokyo\"\n  },\n  \"startDate\": \"2025-09-01\",\n  \"endDate\": \"2025-09-07\",\n  \"currency\": \"JPY\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates a trip with the current user as owner.\nAutomatically builds a day entry for each date between startDate and endDate.\nStatus defaults to 'solo'.\nSaves tripId to environment automatically."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has trip', () => pm.expect(res).to.have.property('trip'));",
+                  "pm.test('Has _id', () => pm.expect(res.trip).to.have.property('_id'));",
+                  "pm.test('Has days', () => pm.expect(res.trip.days).to.be.an('array').with.length.greaterThan(0));",
+                  "pm.test('Owner is participant', () => {",
+                  "  pm.expect(res.trip.participants[0].role).to.equal('owner');",
+                  "});",
+                  "pm.test('Status is solo', () => pm.expect(res.trip.status).to.equal('solo'));",
+                  "if (res.trip?._id) {",
+                  "  pm.environment.set('tripId', res.trip._id);",
+                  "  console.log('✓ tripId saved:', res.trip._id);",
+                  "  console.log('Days created:', res.trip.days?.length);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Trip",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trip id matches', () => {",
+                  "  pm.expect(pm.response.json().trip._id).to.equal(pm.environment.get('tripId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Trip",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tokyo with Sam — Updated\",\n  \"currency\": \"USD\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "All fields optional. Changing startDate or endDate rebuilds the days array."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has trip', () => pm.expect(pm.response.json()).to.have.property('trip'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Trip Dates (rebuilds days)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2025-09-01\",\n  \"endDate\": \"2025-09-10\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Tests the date-change → day rebuild path. Check that days.length in the response equals the number of days between the new dates."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Days rebuilt correctly', () => {",
+                  "  const res = pm.response.json();",
+                  "  const start = new Date('2025-09-01');",
+                  "  const end = new Date('2025-09-10');",
+                  "  const expected = Math.round((end - start) / 86400000) + 1;",
+                  "  pm.expect(res.trip.days.length).to.equal(expected);",
+                  "  console.log(`Expected ${expected} days, got ${res.trip.days.length}`);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set My Preferences",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "preferences"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pace\": \"moderate\",\n  \"interests\": [\"food\", \"nature\", \"adventure\"],\n  \"morningPerson\": true,\n  \"hardAvoids\": \"no museums, no shopping malls\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Upserts preferences for the current user on this trip.\n\nValid pace: 'relaxed' | 'moderate' | 'packed'\nValid interests: 'food' | 'culture' | 'nature' | 'nightlife' | 'shopping' | 'adventure' | 'wellness'\n\nIf both participants have prefs and status is 'pending_partner', status auto-changes to 'generating'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has preference', () => pm.expect(res).to.have.property('preference'));",
+                  "pm.test('pace saved', () => pm.expect(res.preference.pace).to.equal('moderate'));",
+                  "if (res.preference?._id) {",
+                  "  pm.environment.set('preferenceId', res.preference._id);",
+                  "  console.log('✓ preferenceId saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Preferences",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/preferences/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "preferences", "me"]
+            },
+            "description": "Returns 404 if preferences not set yet."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 404', () => pm.expect([200, 404]).to.include(pm.response.code));",
+                  "if (pm.response.code === 404) console.log('Preferences not set yet — run Set My Preferences first');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Partner Preferences",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/preferences/partner",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "preferences", "partner"]
+            },
+            "description": "Read-only. Returns 404 if no partner, or partner hasn't set preferences yet."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 404', () => pm.expect([200, 404]).to.include(pm.response.code));",
+                  "if (pm.response.code === 404) console.log(pm.response.json().error);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trigger Generation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "generate"]
+            },
+            "description": "Fire-and-forget — responds immediately. Generation runs in the background.\nPoll Get Generation Status until status === 'active'.\n\nRequirements: both participants must have preferences set.\nNOTE: generationService has TODO stubs — won't fully complete until placesService + llmService are wired."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 409', () => pm.expect([200, 409]).to.include(pm.response.code));",
+                  "console.log(pm.response.json()?.message || pm.response.json()?.error);",
+                  "if (pm.response.code === 409) console.log('Already generating — poll /generate/status');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Generation Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/generate/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "generate", "status"]
+            },
+            "description": "Poll after triggering generation. Returns { status, generatedAt }.\nPoll every 2-3 seconds until status === 'active'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Has status field', () => pm.expect(res).to.have.property('status'));",
+                  "console.log('Generation status:', res.status);",
+                  "if (res.status === 'active') console.log('✓ Generation complete at', res.generatedAt);",
+                  "if (res.status === 'generating') console.log('Still generating — poll again');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Trip",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}"]
+            },
+            "description": "Cascade-deletes activities and preferences. Clears tripId and activityId from environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.unset('tripId');",
+                  "pm.environment.unset('activityId');",
+                  "console.log('✓ Trip deleted, tripId + activityId cleared');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "description": "All routes under /api/trips/:id/activities/*\nAll require auth + participantCheck (you must be a trip participant).",
+      "item": [
+        {
+          "name": "Get All Activities",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities"]
+            },
+            "description": "Returns all activities for the trip sorted by dayNumber then order."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has activities array', () => pm.expect(pm.response.json().activities).to.be.an('array'));",
+                  "const acts = pm.response.json().activities;",
+                  "console.log('Total activities:', acts?.length);",
+                  "if (acts?.length > 0) {",
+                  "  const byDay = acts.reduce((acc, a) => { acc[a.dayNumber] = (acc[a.dayNumber] || 0) + 1; return acc; }, {});",
+                  "  console.log('Per day:', JSON.stringify(byDay));",
+                  "  // Save first activityId for update/remove tests",
+                  "  pm.environment.set('activityId', acts[0]._id);",
+                  "  console.log('✓ activityId set to first result:', acts[0]._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Activity (manual)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayNumber\": 1,\n  \"placeId\": \"ChIJYdizgJuLGGARFZMDUMHI8YY\",\n  \"name\": \"Tsukiji Outer Market\",\n  \"category\": \"food\",\n  \"priceLevel\": 2,\n  \"estimatedCostPerPerson\": 25,\n  \"rating\": 4.7,\n  \"photos\": [],\n  \"website\": \"https://www.tsukiji.or.jp\",\n  \"coords\": { \"lat\": 35.6654, \"lng\": 139.7707 },\n  \"bookingType\": \"restaurant\",\n  \"viatorProductId\": null,\n  \"timeOfDay\": \"morning\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Manually add an activity to a day.\n\nRequired: dayNumber, placeId, name\nOptional: everything else\n\nsource auto-set to 'manual'\naddedBy auto-set to current user\nconflict defaults to { flagged: false }\n\nSaves activityId to environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has activity', () => pm.expect(res).to.have.property('activity'));",
+                  "pm.test('Has _id', () => pm.expect(res.activity).to.have.property('_id'));",
+                  "pm.test('Source is manual', () => pm.expect(res.activity.source).to.equal('manual'));",
+                  "pm.test('tripId matches', () => pm.expect(res.activity.tripId).to.equal(pm.environment.get('tripId')));",
+                  "pm.test('conflict not flagged by default', () => pm.expect(res.activity.conflict.flagged).to.be.false);",
+                  "if (res.activity?._id) {",
+                  "  pm.environment.set('activityId', res.activity._id);",
+                  "  console.log('✓ activityId saved:', res.activity._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Activity",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities/{{activityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities", "{{activityId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeOfDay\": \"afternoon\",\n  \"order\": 1,\n  \"conflict\": {\n    \"flagged\": true,\n    \"partner\": \"B\",\n    \"reason\": \"Sam prefers slow mornings\",\n    \"overridden\": true\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Update any field on an activity. All fields optional.\n\nCommon use cases:\n  Override conflict: send conflict.overridden = true\n  Set order: send { order: 1 }\n  Change timeOfDay: send { timeOfDay: 'afternoon' }"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has activity', () => pm.expect(pm.response.json()).to.have.property('activity'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reorder Activities",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities", "reorder"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayNumber\": 1,\n  \"orderedIds\": [\n    \"{{activityId}}\"\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Pass ALL activity IDs for this day in the desired order.\nServer assigns order: 1, 2, 3... by array position.\n\nTo test properly: add 2-3 activities, then send all IDs in a different order.\nReturns the full updated activity list for the day sorted by new order."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has activities', () => pm.expect(pm.response.json().activities).to.be.an('array'));",
+                  "const acts = pm.response.json().activities;",
+                  "if (acts?.length > 0) {",
+                  "  console.log('Reordered. New orders:', acts.map(a => `${a.name}: ${a.order}`).join(', '));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fill Gaps AI (Not Implemented)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities/fill-gaps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities", "fill-gaps"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayNumber\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Returns 501 until generationService is wired up.\nWhen implemented: LLM suggests 2-3 activities to fill empty time slots in the day."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 501 or 200', () => pm.expect([200, 501]).to.include(pm.response.code));",
+                  "console.log('fillGaps status:', pm.response.code, pm.response.json()?.error || 'implemented');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove Activity",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities/{{activityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities", "{{activityId}}"]
+            },
+            "description": "Remove an activity by ID. Clears activityId from environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has message', () => pm.expect(pm.response.json()).to.have.property('message'));",
+                  "pm.environment.unset('activityId');",
+                  "console.log('✓ Activity removed, activityId cleared');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Invites",
+      "description": "Invite a partner to join a trip.\n\nFlow:\n1. Create Invite (as owner) → saves inviteToken\n2. Get Invite (validates token — no auth needed)\n3. Accept Invite (as partner B — requires partnerToken in environment)\n4. Resend Invite (if expired)",
+      "item": [
+        {
+          "name": "Create Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invites/trips/{{tripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invites", "trips", "{{tripId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inviteeEmail\": \"sam@test.com\",\n  \"inviteeName\": \"Sam\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates invite doc and sends email (email requires RESEND_API_KEY — stubs silently without it).\nExpires in 7 days. Any existing pending invite for this email+trip is expired first.\nSaves inviteToken to environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has invite', () => pm.expect(res).to.have.property('invite'));",
+                  "pm.test('Has token', () => pm.expect(res.invite).to.have.property('token'));",
+                  "pm.test('Status is pending', () => pm.expect(res.invite.status).to.equal('pending'));",
+                  "if (res.invite?.token) {",
+                  "  pm.environment.set('inviteToken', res.invite.token);",
+                  "  const clientUrl = pm.environment.get('clientUrl') || 'http://localhost:3000';",
+                  "  console.log('✓ inviteToken saved');",
+                  "  console.log('Partner invite URL:', clientUrl + '/invite/' + res.invite.token);",
+                  "  console.log('Expires at:', res.invite.expiresAt);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Invite (validate token)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/invites/{{inviteToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invites", "{{inviteToken}}"]
+            },
+            "description": "No auth required — mimics what happens when Partner B clicks the email link.\nReturns populated trip name, dates, and inviter name.\n404 = not found, 410 = expired."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const code = pm.response.code;",
+                  "pm.test('Status is 200, 404, or 410', () => pm.expect([200, 404, 410]).to.include(code));",
+                  "if (code === 200) {",
+                  "  const invite = pm.response.json().invite;",
+                  "  console.log('Invite for trip:', invite.tripId?.name);",
+                  "  console.log('Invited by:', invite.invitedBy?.name);",
+                  "  console.log('Status:', invite.status);",
+                  "} else if (code === 410) {",
+                  "  console.log('Invite expired — use Resend Invite');",
+                  "} else if (code === 404) {",
+                  "  console.log('Token not found — check inviteToken in environment');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept Invite (as Partner B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{partnerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invites/{{inviteToken}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invites", "{{inviteToken}}", "accept"]
+            },
+            "description": "Run this as Partner B:\n1. Register a second user (sam@test.com) via Auth / Register\n2. Copy the returned token\n3. Set it as partnerToken in the environment manually\n4. Run this request\n\nOn success: Partner B added to trip.participants, invite status → 'accepted'.\nPartner B can then set preferences using partnerToken."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has trip', () => pm.expect(pm.response.json()).to.have.property('trip'));",
+                  "const trip = pm.response.json().trip;",
+                  "if (trip) {",
+                  "  console.log('Participants now:', trip.participants?.length);",
+                  "  console.log('Trip status:', trip.status);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resend Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invites/trips/{{tripId}}/resend",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invites", "trips", "{{tripId}}", "resend"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inviteeEmail\": \"sam@test.com\",\n  \"inviteeName\": \"Sam\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates a fresh invite, expiring the old one. Saves new inviteToken to environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has invite', () => pm.expect(pm.response.json()).to.have.property('invite'));",
+                  "if (pm.response.json().invite?.token) {",
+                  "  pm.environment.set('inviteToken', pm.response.json().invite.token);",
+                  "  console.log('✓ New inviteToken saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "All routes require auth.",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"]
+            },
+            "description": "Returns up to 50 notifications, newest first. Saves first notification ID to environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has notifications array', () => pm.expect(pm.response.json().notifications).to.be.an('array'));",
+                  "const notifs = pm.response.json().notifications;",
+                  "const unread = notifs?.filter(n => !n.read).length || 0;",
+                  "console.log(`Total: ${notifs?.length}, Unread: ${unread}`);",
+                  "if (notifs?.length > 0) {",
+                  "  pm.environment.set('notificationId', notifs[0]._id);",
+                  "  console.log('✓ notificationId saved:', notifs[0]._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "{{notificationId}}", "read"]
+            },
+            "description": "Run Get Notifications first to set notificationId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 404', () => pm.expect([200, 404]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Is now read', () => pm.expect(pm.response.json().notification.read).to.be.true);",
+                  "} else {",
+                  "  console.log('Not found — run Get Notifications first');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has message', () => pm.expect(pm.response.json()).to.have.property('message'));",
+                  "console.log('All notifications marked read');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Places (Not Implemented)",
+      "description": "Both return 501 until placesService is connected. Included so you know when they start working.",
+      "item": [
+        {
+          "name": "Search Places",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/places/search?q=ramen&category=food",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "places", "search"],
+              "query": [
+                { "key": "q", "value": "ramen" },
+                { "key": "category", "value": "food" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 501 or 200', () => pm.expect([200, 501]).to.include(pm.response.code));",
+                  "console.log('Places search status:', pm.response.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Place Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/places/ChIJYdizgJuLGGARFZMDUMHI8YY",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "places", "ChIJYdizgJuLGGARFZMDUMHI8YY"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 501 or 200', () => pm.expect([200, 501]).to.include(pm.response.code));",
+                  "console.log('Place detail status:', pm.response.code);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error cases",
+      "description": "Requests that should fail. Use these to verify error handling is correct.",
+      "item": [
+        {
+          "name": "Login wrong password → 401",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@test.com\",\n  \"password\": \"wrongpassword\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Has error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "No token → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Non-participant trip → 403 or 404",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/000000000000000000000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "000000000000000000000001"]
+            },
+            "description": "Valid ObjectId format but not a real trip. Tests participantCheck middleware."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 403 or 404', () => pm.expect([403, 404]).to.include(pm.response.code));",
+                  "console.log('Response:', pm.response.code, pm.response.json()?.error);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid preference pace → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "preferences"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pace\": \"turbo\",\n  \"interests\": [\"food\"],\n  \"morningPerson\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "'turbo' is not a valid pace value. Tests Zod validateBody middleware returns 400."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Has validation error', () => pm.expect(pm.response.json()).to.have.property('error'));",
+                  "console.log('Validation error:', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activity missing required fields → 4xx",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "activities"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Incomplete — missing dayNumber and placeId\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Missing dayNumber and placeId. Should return 400 or 500 depending on Mongoose validation."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 4xx', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "console.log('Error:', pm.response.code, JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate register → 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Test\",\n  \"email\": \"alex@test.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Register with an already-used email. Should return 409 Conflict."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Has error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate already generating → 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/trips/{{tripId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trips", "{{tripId}}", "generate"]
+            },
+            "description": "Trigger generation twice in a row. Second call should return 409 if trip is already in 'generating' status."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200 or 409', () => pm.expect([200, 409]).to.include(pm.response.code));",
+                  "console.log('Response:', pm.response.code, pm.response.json()?.message || pm.response.json()?.error);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+node_modules
+.dockerignore
+Dockerfile*
+.git
+logs
+public/tiles
+npm-debug.log
+*.md 

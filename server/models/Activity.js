@@ -1,24 +1,44 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const ActivitySchema = new mongoose.Schema({
   tripId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trip', required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  dayNumber: { type: Number, required: true },
+  placeId: { type: String, required: true },
   name: { type: String, required: true },
-  description: String,
-  location: String,
-  time: String,
-  duration: String,
-  cost: String,
-  tips: String,
   category: String,
-  latitude: Number,
-  longitude: Number,
+  priceLevel: Number,
+  estimatedCostPerPerson: Number,
   rating: Number,
   photos: [String],
-  completed: { type: Boolean, default: false },
-  completedAt: Date,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
+  website: String,
+  openingHours: mongoose.Schema.Types.Mixed,
+  coords: { lat: Number, lng: Number },
+  bookingType: {
+    type: String,
+    enum: ['experience', 'restaurant', 'attraction', 'none'],
+    default: 'none',
+  },
+  viatorProductId: String,
+  order: { type: Number, default: null },
+  timeOfDay: {
+    type: String,
+    enum: ['morning', 'afternoon', 'evening', null],
+    default: null,
+  },
+  source: {
+    type: String,
+    enum: ['ai_generated', 'ai_suggested', 'manual'],
+    required: true,
+  },
+  addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  conflict: {
+    flagged: { type: Boolean, default: false },
+    partner: { type: String, default: null },
+    reason: { type: String, default: null },
+    overridden: { type: Boolean, default: false },
+  },
+}, { timestamps: true });
 
-module.exports = mongoose.model('Activity', ActivitySchema); 
+ActivitySchema.index({ tripId: 1, dayNumber: 1 });
+
+export default mongoose.model('Activity', ActivitySchema);
