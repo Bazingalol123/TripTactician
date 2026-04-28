@@ -39,8 +39,7 @@ services:
       - PORT=5000
       # Use local Docker MongoDB (free, no account needed)
       - MONGODB_URI=mongodb://mongo:27017/traveltrek
-      # Atlas (uncomment if you want cloud DB):
-      # - MONGODB_URI=mongodb+srv://omerkipod123:omerkipod123@cluster0.72xzf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+
 
       # LLM configuration – switch to OpenAI for cheaper model
       - LLM_PROVIDER=openai
