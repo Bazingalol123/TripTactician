@@ -118,15 +118,19 @@ export const runGeneration = async (tripId) => {
     }
     await Activity.insertMany(activityDocs);
 
-    const dayUpdates = itinerary.days.map((d) => ({
-      dayNumber: d.dayNumber,
-      label: d.label,
+    // Merge LLM-generated labels into the original days array (which has the
+    // correct count from startDate/endDate). Never replace days entirely —
+    // the LLM may return fewer days than the trip has.
+    const labelMap = Object.fromEntries(itinerary.days.map((d) => [d.dayNumber, d.label]));
+    const updatedDays = trip.days.map((d) => ({
+      ...d,
+      label: labelMap[d.dayNumber] || d.label || '',
       ordered: false,
     }));
 
     await Trip.findByIdAndUpdate(tripId, {
       status: 'active',
-      days: dayUpdates,
+      days: updatedDays,
       generatedAt: new Date(),
     });
 

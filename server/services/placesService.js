@@ -3,35 +3,61 @@ import { env } from '../config/env.js';
 import logger from '../utils/logger.js';
 
 const MAX_CANDIDATES = 60;
-const MIN_RATING = 3.5;
-const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place';
+const FSQ_BASE = 'https://places-api.foursquare.com';
+
+const FSQ_HEADERS = () => ({
+  'Authorization': `Bearer ${env.FOURSQUARE_API_KEY}`,
+  'X-Places-Api-Version': '2025-06-17',
+  'Accept': 'application/json',
+});
+
+const INTEREST_QUERIES = {
+  food:      'restaurants',
+  culture:   'museums art galleries',
+  nature:    'parks',
+  nightlife: 'bars nightlife',
+  shopping:  'shopping',
+  adventure: 'tourist attractions',
+  wellness:  'spa wellness',
+};
 
 export const fetchCandidates = async ({ destination, interests, hardAvoidsA, hardAvoidsB }) => {
-  if (!env.GOOGLE_PLACES_API_KEY) {
-    logger.warn('GOOGLE_PLACES_API_KEY not set — skipping place fetch');
+  if (!env.FOURSQUARE_API_KEY) {
+    logger.warn('FOURSQUARE_API_KEY not set — skipping place fetch');
     return [];
   }
 
-  const categories = mapInterestsToPlaceTypes(interests);
-  const allResults = [];
+  const queries = [...new Set((interests || []).map((i) => INTEREST_QUERIES[i]).filter(Boolean))];
 
-  for (const category of categories) {
-    try {
-      const res = await axios.get(`${PLACES_BASE}/textsearch/json`, {
-        params: {
-          query: `${category} in ${destination.name}`,
-          key: env.GOOGLE_PLACES_API_KEY,
-          type: category,
-        },
-      });
-      allResults.push(...(res.data.results || []));
-    } catch (err) {
-      logger.warn({ err, category }, 'Places search failed for category');
-    }
-  }
+  const results = await Promise.all(
+    queries.map(async (query) => {
+      try {
+        const res = await axios.get(`${FSQ_BASE}/places/search`, {
+          headers: FSQ_HEADERS(),
+          params: {
+            near: destination.name,
+            query,
+            limit: 10,
+            fields: 'fsq_place_id,name,location,categories,hours,price,rating,stats,photos,website,description,tips',
+          },
+        });
+        return res.data.results || [];
+      } catch (err) {
+        logger.warn({ err, query }, 'Foursquare search failed for query');
+        return [];
+      }
+    })
+  );
 
-  const filtered = allResults
-    .filter((p) => (p.rating || 0) >= MIN_RATING)
+  const seen = new Set();
+  const unique = results.flat().filter((p) => {
+    if (seen.has(p.fsq_place_id)) return false;
+    seen.add(p.fsq_place_id);
+    return true;
+  });
+
+  const filtered = unique
+    .filter((p) => !p.rating || p.rating >= 7.0)
     .filter((p) => !matchesAvoids(p, hardAvoidsA))
     .filter((p) => !matchesAvoids(p, hardAvoidsB))
     .slice(0, MAX_CANDIDATES);
@@ -42,46 +68,50 @@ export const fetchCandidates = async ({ destination, interests, hardAvoidsA, har
 const matchesAvoids = (place, hardAvoids) => {
   if (!hardAvoids) return false;
   const avoidWords = hardAvoids.toLowerCase().split(/[,\s]+/);
-  const placeText = `${place.name} ${(place.types || []).join(' ')}`.toLowerCase();
+  const placeText = place.name.toLowerCase();
   return avoidWords.some((word) => word.length > 2 && placeText.includes(word));
 };
 
 const normalizePlaceResult = (place) => ({
-  placeId: place.place_id,
-  name: place.name,
+  placeId:      place.fsq_place_id,
+  name:         place.name,
   coords: {
-    lat: place.geometry?.location?.lat,
-    lng: place.geometry?.location?.lng,
+    lat: place.location?.lat ?? place.location?.latitude,
+    lng: place.location?.lng ?? place.location?.longitude,
   },
-  category: place.types?.[0] || 'attraction',
-  priceLevel: place.price_level ?? null,
-  rating: place.rating,
-  openingHours: place.opening_hours || null,
-  photos: (place.photos || []).slice(0, 3).map((p) => p.photo_reference),
-  website: place.website || null,
-  reservationsUrl: null,
-  viatorProductId: null,
-  bookingType: inferBookingType(place.types),
+  category:     place.categories?.[0]?.name || 'attraction',
+  priceLevel:   place.price ?? null,
+  rating:       place.rating ? place.rating / 2 : null,
+  openingHours: place.hours ?? null,
+  photos:       (place.photos || [])
+                  .slice(0, 3)
+                  .map((p) => `${p.prefix}original${p.suffix}`),
+  website:      place.website || null,
+  reservationsUrl:  null,
+  viatorProductId:  null,
+  bookingType:  inferBookingType(place.categories),
 });
 
-const inferBookingType = (types = []) => {
-  if (types.some((t) => ['restaurant', 'cafe', 'bar', 'food'].includes(t))) return 'restaurant';
-  if (types.some((t) => ['tourist_attraction', 'museum', 'park', 'amusement_park'].includes(t)))
-    return 'experience';
-  if (types.some((t) => ['church', 'place_of_worship', 'natural_feature'].includes(t)))
-    return 'attraction';
+const inferBookingType = (categories = []) => {
+  const names = categories.map((c) => (c.name || '').toLowerCase()).join(' ');
+  if (['restaurant', 'cafe', 'bar', 'food'].some((k) => names.includes(k))) return 'restaurant';
+  if (['museum', 'park', 'attraction', 'gallery'].some((k) => names.includes(k))) return 'experience';
+  if (['church', 'temple', 'nature'].some((k) => names.includes(k))) return 'attraction';
   return 'none';
 };
 
-const mapInterestsToPlaceTypes = (interests) => {
-  const map = {
-    food: ['restaurant', 'cafe', 'bakery'],
-    culture: ['museum', 'art_gallery', 'church'],
-    nature: ['park', 'natural_feature'],
-    nightlife: ['bar', 'night_club'],
-    shopping: ['shopping_mall', 'store'],
-    adventure: ['amusement_park', 'tourist_attraction'],
-    wellness: ['spa', 'gym'],
-  };
-  return [...new Set((interests || []).flatMap((i) => map[i] || []))];
+export const fetchDestinationPhoto = async (placeId) => {
+  if (!env.FOURSQUARE_API_KEY) return null;
+  try {
+    const res = await axios.get(`${FSQ_BASE}/places/${placeId}`, {
+      headers: FSQ_HEADERS(),
+      params: { fields: 'photos' },
+    });
+    const photo = res.data?.photos?.[0];
+    if (!photo) return null;
+    return `${photo.prefix}original${photo.suffix}`;
+  } catch (err) {
+    logger.warn({ err, placeId }, 'fetchDestinationPhoto failed');
+    return null;
+  }
 };

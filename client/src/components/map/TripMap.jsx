@@ -45,7 +45,7 @@ export default function TripMap({
   const height = fullscreen ? '100vh' : '100%';
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', height, width: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', zIndex: 0, height, width: '100%' }}>
       <MapContainer
         center={[35.6762, 139.6503]}
         zoom={12}

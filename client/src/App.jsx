@@ -11,7 +11,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import InviteLandingPage from './pages/InviteLandingPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import AppShell from './pages/AppShell.jsx';
-import TripsPanel from './pages/TripsPanel.jsx';
 import TripPage from './pages/TripPage.jsx';
 import ExpensePage from './pages/ExpensePage.jsx';
 
@@ -39,7 +38,7 @@ function AppRoutes() {
       <Route path="/" element={
         <PrivateRoute>
           <AppShell>
-            <TripsPanel />
+            <div />
           </AppShell>
         </PrivateRoute>
       } />

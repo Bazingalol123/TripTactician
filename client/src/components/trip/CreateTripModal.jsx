@@ -15,6 +15,7 @@ export default function CreateTripModal({ onClose }) {
   const [endDate, setEndDate] = useState('');
   const [name, setName] = useState('');
   const [errors, setErrors] = useState({});
+  const [destPhoto, setDestPhoto] = useState(null);
 
   const createMutation = useMutation({
     mutationFn: createTrip,
@@ -67,10 +68,34 @@ export default function CreateTripModal({ onClose }) {
             label="Destination"
             placeholder="Tokyo, Japan"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={(e) => {
+              setDestination(e.target.value);
+              setDestPhoto(null);
+            }}
+            onBlur={() => {
+              if (destination.trim()) {
+                setDestPhoto(
+                  `https://source.unsplash.com/800x320/?${encodeURIComponent(destination.trim())},travel`
+                );
+              }
+            }}
             error={errors.destination}
             autoFocus
           />
+
+          {destPhoto && (
+            <div className="w-full h-14 rounded-lg overflow-hidden mb-1 relative">
+              <img
+                src={destPhoto}
+                alt={destination}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <span className="absolute bottom-1.5 left-2 text-[11px] font-medium text-white bg-black/35 rounded px-1.5 py-0.5">
+                {destination}
+              </span>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Input

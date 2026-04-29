@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import TripsPanel from './TripsPanel.jsx';
 import SettingsPanel from './SettingsPanel.jsx';
@@ -6,9 +7,13 @@ import { Map, Settings } from 'lucide-react';
 
 export default function AppShell({ children }) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [activePanel, setActivePanel] = useState('trips');
   const [contextPanelOpen, setContextPanelOpen] = useState(true);
+
+  const onTripRoute = location.pathname.startsWith('/trips/');
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -57,7 +62,7 @@ export default function AppShell({ children }) {
       {contextPanelOpen && (
         <div className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
           {activePanel === 'trips' && (
-            <TripsPanel onClose={() => setContextPanelOpen(false)} />
+            <TripsPanel onClose={onTripRoute ? () => navigate('/') : undefined} />
           )}
           {activePanel === 'settings' && (
             <SettingsPanel onClose={() => setContextPanelOpen(false)} />

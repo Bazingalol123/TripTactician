@@ -8,6 +8,7 @@ const TripSchema = new mongoose.Schema({
     coords: { lat: Number, lng: Number },
     country: String,
     timezone: String,
+    photoUrl: String,
   },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },

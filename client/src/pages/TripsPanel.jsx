@@ -7,6 +7,12 @@ import { formatDateRange, daysUntil } from '../utils/dates.js';
 import { Plus } from 'lucide-react';
 import CreateTripModal from '../components/trip/CreateTripModal.jsx';
 
+const destPhotoSrc = (trip) =>
+  trip.destination?.photoUrl ||
+  (trip.destination?.name
+    ? `https://source.unsplash.com/400x160/?${encodeURIComponent(trip.destination.name)},travel`
+    : null);
+
 export default function TripsPanel({ onClose }) {
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
@@ -26,7 +32,17 @@ export default function TripsPanel({ onClose }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h2 className="text-sm font-semibold text-gray-900">My trips</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-gray-900">My trips</h2>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-sm leading-none"
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
@@ -40,7 +56,7 @@ export default function TripsPanel({ onClose }) {
         {isLoading && (
           <div className="flex flex-col gap-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
         )}
@@ -48,18 +64,21 @@ export default function TripsPanel({ onClose }) {
         {heroTrip && (
           <button
             onClick={() => navigate(`/trips/${heroTrip._id}`)}
-            className="w-full text-left bg-blue-50 border border-blue-100 rounded-xl p-3 hover:bg-blue-100 transition-colors"
+            className="w-full text-left bg-white border border-blue-100 rounded-xl overflow-hidden hover:border-blue-200 transition-colors shadow-sm"
           >
-            <p className="text-sm font-semibold text-gray-900 mb-0.5">{heroTrip.name}</p>
-            <p className="text-xs text-gray-500 mb-1.5">
-              {formatDateRange(heroTrip.startDate, heroTrip.endDate)}
-              {' · '}
-              <span className="text-blue-600 font-medium">
-                {(() => { const d = daysUntil(heroTrip.startDate); return `${d} ${d === 1 ? 'day' : 'days'} away`; })()}
-              </span>
-            </p>
-            <HeroStatusLine trip={heroTrip} />
-            <p className="text-xs text-blue-600 font-medium mt-2">Open →</p>
+            <PhotoStrip trip={heroTrip} height="h-20" />
+            <div className="p-3 bg-blue-50">
+              <p className="text-sm font-semibold text-gray-900 mb-0.5">{heroTrip.name}</p>
+              <p className="text-xs text-gray-500 mb-1.5">
+                {formatDateRange(heroTrip.startDate, heroTrip.endDate)}
+                {' · '}
+                <span className="text-blue-600 font-medium">
+                  {(() => { const d = daysUntil(heroTrip.startDate); return `${d} ${d === 1 ? 'day' : 'days'} away`; })()}
+                </span>
+              </p>
+              <HeroStatusLine trip={heroTrip} />
+              <p className="text-xs text-blue-600 font-medium mt-2">Open →</p>
+            </div>
           </button>
         )}
 
@@ -71,35 +90,69 @@ export default function TripsPanel({ onClose }) {
           <button
             key={trip._id}
             onClick={() => navigate(`/trips/${trip._id}`)}
-            className="w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+            className="w-full text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors shadow-sm"
           >
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{trip.name}</p>
-              <p className="text-xs text-gray-400 truncate">
-                {formatDateRange(trip.startDate, trip.endDate)}
-              </p>
+            <PhotoStrip trip={trip} height="h-20" />
+            <div className="flex items-center justify-between px-3 py-2">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{trip.name}</p>
+                <p className="text-xs text-gray-400 truncate">
+                  {formatDateRange(trip.startDate, trip.endDate)}
+                </p>
+              </div>
+              <StatusBadge status={trip.status} />
             </div>
-            <StatusBadge status={trip.status} />
           </button>
         ))}
 
         {!isLoading && trips.length === 0 && (
-          <div className="text-center py-8">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">✈️</span>
+          <div className="flex flex-col items-center px-2 pt-4">
+            <div className="w-full rounded-xl overflow-hidden mb-4">
+              <img
+                src="https://source.unsplash.com/640x320/?honeymoon,travel,couple"
+                alt="Start planning"
+                className="w-full h-32 object-cover"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
             </div>
-            <p className="text-sm text-gray-500 mb-1">No trips yet</p>
+            <h2 className="font-serif text-base font-medium text-gray-900 mb-1 text-center">
+              Where are you two going?
+            </h2>
+            <p className="text-xs text-gray-500 text-center mb-4 leading-relaxed">
+              Plan your honeymoon together — every decision, in sync.
+            </p>
             <button
               onClick={() => setShowCreate(true)}
-              className="text-xs text-blue-600 hover:underline font-medium"
+              className="px-4 py-2 bg-gray-900 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors"
             >
-              Plan your first trip →
+              Plan your trip →
             </button>
           </div>
         )}
       </div>
 
       {showCreate && <CreateTripModal onClose={() => setShowCreate(false)} />}
+    </div>
+  );
+}
+
+function PhotoStrip({ trip, height = 'h-20' }) {
+  const src = destPhotoSrc(trip);
+  return (
+    <div className={`relative w-full ${height} bg-gray-100 overflow-hidden`}>
+      {src && (
+        <img
+          src={src}
+          alt={trip.destination?.name || ''}
+          className="w-full h-full object-cover"
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+      )}
+      {trip.destination?.name && (
+        <span className="absolute bottom-1.5 left-2 text-[10px] font-medium text-white bg-black/40 rounded px-1.5 py-0.5">
+          {trip.destination.name}
+        </span>
+      )}
     </div>
   );
 }

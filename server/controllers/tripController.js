@@ -3,6 +3,7 @@ import Trip from '../models/Trip.js';
 import Activity from '../models/Activity.js';
 import Preference from '../models/Preference.js';
 import AppError from '../utils/AppError.js';
+import { fetchDestinationPhoto } from '../services/placesService.js';
 
 const buildDays = (startDate, endDate) => {
   const days = [];
@@ -25,10 +26,13 @@ const isParticipant = (trip, userId) =>
 
 export const createTrip = asyncHandler(async (req, res) => {
   const { name, destination, startDate, endDate, currency } = req.body;
+  const photoUrl = destination?.placeId
+    ? await fetchDestinationPhoto(destination.placeId).catch(() => null)
+    : null;
   const autoName = name || `${destination?.name || 'My trip'} · ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
   const trip = await Trip.create({
     name: autoName,
-    destination,
+    destination: { ...destination, photoUrl },
     startDate: new Date(startDate),
     endDate: new Date(endDate),
     status: 'generating',

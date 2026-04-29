@@ -21,6 +21,7 @@ const envSchema = z.object({
   CLIENT_URL: z.string().default('http://localhost:3000'),
   LLM_RATE_LIMIT_MAX: z.string().default('5'),
   LOG_LEVEL: z.string().default('info'),
+  FOURSQUARE_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
